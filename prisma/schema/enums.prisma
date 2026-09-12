@@ -1,0 +1,15 @@
+enum Role {
+  USER
+  LANDLORD
+  ADMIN
+}
+
+enum AuthProvider {
+  CREDENTIALS
+  GOOGLE
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
