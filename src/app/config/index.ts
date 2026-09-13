@@ -22,4 +22,8 @@ export default {
   landlord_name: process.env.LANDLORD_NAME!,
   landlord_email: process.env.LANDLORD_EMAIL!,
   landlord_password: process.env.LANDLORD_PASSWORD!,
+  redis_user_name: process.env.REDIS_USERNAME!,
+  redis_password: process.env.REDIS_PASSWORD!,
+  redis_host: process.env.REDIS_HOST!,
+  redis_port: process.env.REDIS_PORT!,
 };

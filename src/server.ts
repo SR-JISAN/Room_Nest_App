@@ -1,6 +1,7 @@
 import app from "./app";
 import config from "./app/config";
 import { prisma } from "./app/lib/prisma";
+import { redisClient } from "./app/lib/redis";
 import { AdminSeed, LandlordSeed } from "./app/utils/seeds";
 
 
@@ -18,6 +19,11 @@ const main= async()=>{
     LandlordSeed()
     console.log("landlord created")
 
+    //redis connected
+
+    await redisClient.connect()
+
+    console.log("redis connected")
 
 
     app.listen(PORT, () => {
