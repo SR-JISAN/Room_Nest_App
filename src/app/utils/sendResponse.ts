@@ -12,7 +12,8 @@ type TMeta = {
 type TResponse<T> ={
   success :boolean
   statusCode: number
-  message : T
+  message : String
+  data: T
   meta?: TMeta
 }
 
@@ -22,7 +23,7 @@ export const SendResponse  = <T>(res:Response,data:TResponse<T>)=>{
         success:data.success,
         statusCode: data.statusCode,
         message:data.message,
-        data:data.message,
+        data:data.data,
         meta: data.meta
     })
 }

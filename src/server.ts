@@ -1,6 +1,7 @@
 import app from "./app";
 import config from "./app/config";
 import { prisma } from "./app/lib/prisma";
+import { AdminSeed, LandlordSeed } from "./app/utils/seeds";
 
 
 
@@ -11,6 +12,14 @@ const main= async()=>{
    try {
     await prisma.$connect();
     console.log("Connected to the database successfully.");
+    //for test 
+    AdminSeed()
+    console.log("admin created")
+    LandlordSeed()
+    console.log("landlord created")
+
+
+
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });

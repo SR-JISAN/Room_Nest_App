@@ -1,0 +1,31 @@
+import z from "zod";
+
+export const RegistrationValidationZODSchema = z.object({
+  name: z
+    .string("Use characters only")
+    .min(3, "Name should be minimum 3 letters")
+    .max(50, "Name should be maximum 50 letters")
+    .regex(/^[A-Za-z\s]+$/, "Name can contain only letters and spaces"),
+
+  email: z.email("Use a valid email"),
+
+  password: z
+    .string("Use a strong password")
+    .min(8, "Password must contain minimum 8 characters")
+    .regex(/[A-Z]/, "Password must contain one uppercase letter")
+    .regex(/[a-z]/, "Password must contain one lowercase letter")
+    .regex(/[0-9]/, "Password must contain one number")
+    .regex(/[^A-Za-z0-9]/, "Password must contain one special character"),
+
+  profile: z
+    .object({
+      contactNumber: z
+        .string("Use a valid contact number")
+        .regex(
+          /^01[3-9]\d{8}$/,
+          "Please provide a valid Bangladesh contact number",
+        )
+        .optional(),
+    })
+    .optional(),
+});

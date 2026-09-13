@@ -1,6 +1,6 @@
 model Users {
   id                 String       @id @default(uuid())
-  name               String
+  name               String       @db.VarChar(15)
   email              String       @unique
   password           String
   role               Role         @default(USER)
@@ -8,8 +8,8 @@ model Users {
   googleID           String?      @unique
   status             UserStatus   @default(ACTIVE)
   emailVerified      Boolean      @default(false)
-  imageURL           String       @default("")
-  imagePublicId      String       @default("")
+  imageURL           String?      @default("")
+  imagePublicId      String?      @default("")
   needPasswordChange Boolean      @default(false)
   isDeleted          Boolean      @default(false)
   deletedAt          DateTime?

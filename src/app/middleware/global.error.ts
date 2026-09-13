@@ -14,8 +14,8 @@ export const globalErrorHandler = (
     console.log("Error from Global Error Handler", error);
   }
 
-  let statusCode: Number = httpStatus.INTERNAL_SERVER_ERROR;
-  let errorMessage: String = error.message || "Internal Server Error";
+  let statusCode: number = httpStatus.INTERNAL_SERVER_ERROR;
+  let errorMessage: string = error.message || "Internal Server Error";
 
   let errorName = error.name || "Internal Server Error";
 
@@ -46,7 +46,7 @@ export const globalErrorHandler = (
     errorMessage = error.message;
   }
 
-  res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+  res.status(statusCode).json({
     success: false,
     statusCode: statusCode || httpStatus.INTERNAL_SERVER_ERROR,
     name:

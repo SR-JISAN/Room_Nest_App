@@ -8,6 +8,18 @@ dotenv.config({
 
 export default {
   node_env: process.env.NODE_ENV,
-  port:process.env.PORT,
+  port: process.env.PORT,
   frontend_url: process.env.FRONTEND_URL,
+  backend_url: process.env.APP_URL,
+  bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
+  jwt_access_secret: process.env.JWT_ACCESS_SECRET!,
+  jwt_refresh_secret: process.env.JWT_REFRESH_SECRET!,
+  jwt_access_expires_in: process.env.JWT_ACCESS_EXPIRES_IN!,
+  jwt_refresh_expires_in: process.env.JWT_REFRESH_EXPIRES_IN!,
+  admin_name: process.env.ADMIN_NAME!,
+  admin_email: process.env.ADMIN_EMAIL!,
+  admin_password: process.env.ADMIN_PASSWORD!,
+  landlord_name: process.env.LANDLORD_NAME!,
+  landlord_email: process.env.LANDLORD_EMAIL!,
+  landlord_password: process.env.LANDLORD_PASSWORD!,
 };
