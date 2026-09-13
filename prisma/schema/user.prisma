@@ -1,6 +1,6 @@
 model Users {
   id                 String       @id @default(uuid())
-  name               String       @db.VarChar(15)
+  name               String       
   email              String       @unique
   password           String
   role               Role         @default(USER)
@@ -17,5 +17,6 @@ model Users {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
 
+  @@index([id,email,role])
   @@map("users")
 }

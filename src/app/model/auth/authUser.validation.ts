@@ -1,5 +1,13 @@
 import z from "zod";
 
+
+const allowedEmailDomains = [
+  "gmail.com",
+  "yahoo.com",
+  "outlook.com",
+  "hotmail.com",
+];
+
 export const RegistrationValidationZODSchema = z.object({
   name: z
     .string("Use characters only")
@@ -7,11 +15,22 @@ export const RegistrationValidationZODSchema = z.object({
     .max(50, "Name should be maximum 50 letters")
     .regex(/^[A-Za-z\s]+$/, "Name can contain only letters and spaces"),
 
-  email: z.email("Use a valid email"),
+  email: z
+    .email("Use a valid email")
+    .refine(
+      (email) => {
+        const domain = email.split("@")[1]?.toLowerCase();
+
+        return allowedEmailDomains.includes(domain);
+      },
+      {
+        message: "Please use a supported email provider",
+      }
+    ),
 
   password: z
     .string("Use a strong password")
-    .min(8, "Password must contain minimum 8 characters")
+    .min(6, "Password must contain minimum 6 characters")
     .regex(/[A-Z]/, "Password must contain one uppercase letter")
     .regex(/[a-z]/, "Password must contain one lowercase letter")
     .regex(/[0-9]/, "Password must contain one number")
@@ -28,4 +47,21 @@ export const RegistrationValidationZODSchema = z.object({
         .optional(),
     })
     .optional(),
+});
+
+export const VerifyEmailZodSchema = z.object({
+  email: z.email("Use a valid email").refine(
+    (email) => {
+      const domain = email.split("@")[1]?.toLowerCase();
+
+      return allowedEmailDomains.includes(domain);
+    },
+    {
+      message: "Please use a supported email provider",
+    },
+  ),
+  otp: z
+    .string()
+    .length(6, "OTP must be 6 digits")
+    .regex(/^\d{6}$/, "OTP must contain only numbers"),
 });

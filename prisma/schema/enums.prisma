@@ -12,4 +12,5 @@ enum AuthProvider {
 enum UserStatus {
   ACTIVE
   BLOCKED
+  DELETED
 }

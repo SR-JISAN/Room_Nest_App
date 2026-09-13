@@ -10,5 +10,6 @@ model Profiles {
   updatedAt   DateTime  @updatedAt
   user        Users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
+  @@index([id,userId])
   @@map("profile")
 }

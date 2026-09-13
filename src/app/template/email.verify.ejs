@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Verify Your Email - Room Nest</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f4f7fb;
+      color: #1f2937;
+      padding: 30px 15px;
+    }
+
+    .email-wrapper {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .email-container {
+      background-color: #ffffff;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Header */
+    .header {
+      background-color: #2563eb;
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .logo {
+      color: #ffffff;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .tagline {
+      color: #dbeafe;
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    /* Content */
+    .content {
+      padding: 40px 35px;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 15px;
+    }
+
+    .description {
+      font-size: 15px;
+      line-height: 1.7;
+      color: #6b7280;
+      margin-bottom: 25px;
+    }
+
+    .otp-label {
+      text-align: center;
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 10px;
+    }
+
+    .otp-box {
+      background-color: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .otp {
+      color: #2563eb;
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 8px;
+    }
+
+    .warning {
+      background-color: #fff7ed;
+      border-left: 4px solid #f97316;
+      padding: 12px 15px;
+      margin-bottom: 25px;
+      border-radius: 4px;
+    }
+
+    .warning p {
+      color: #9a3412;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .security {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    .thanks {
+      font-size: 14px;
+      color: #374151;
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .footer {
+      background-color: #f9fafb;
+      padding: 20px;
+      text-align: center;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .footer p {
+      font-size: 12px;
+      color: #9ca3af;
+      line-height: 1.6;
+    }
+
+    .footer a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+
+    @media only screen and (max-width: 600px) {
+      .content {
+        padding: 30px 20px;
+      }
+
+      .title {
+        font-size: 21px;
+      }
+
+      .otp {
+        font-size: 27px;
+        letter-spacing: 6px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="email-wrapper">
+
+    <div class="email-container">
+
+      <!-- Header -->
+      <div class="header">
+        <div class="logo">ROOM NEST</div>
+        <div class="tagline">
+          Find your perfect place to stay
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+
+        <h1 class="title">
+          Verify Your Email
+        </h1>
+
+        <p class="description">
+          Hello <strong><%= name %></strong>,
+          <br /><br />
+
+          Thank you for creating an account with
+          <strong>Room Nest</strong>.
+          Please use the verification code below to verify your email address.
+        </p>
+
+        <p class="otp-label">
+          Your verification code
+        </p>
+
+        <div class="otp-box">
+          <div class="otp">
+            <%= otp %>
+          </div>
+        </div>
+
+        <div class="warning">
+          <p>
+            <strong>Important:</strong>
+            This OTP will expire in  <strong><%= expiresAt %></strong>
+             (Bangladesh Time).
+            Please do not share this code with anyone.
+          </p>
+        </div>
+
+        <p class="security">
+          If you did not create an account on Room Nest,
+          you can safely ignore this email.
+        </p>
+
+        <p class="thanks">
+          Thanks for choosing Room Nest!<br />
+          <strong>The Room Nest Team</strong>
+        </p>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>
+          © 2026 Room Nest. All rights reserved.
+        </p>
+
+        <p>
+          This is an automated email. Please do not reply to this message.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>
