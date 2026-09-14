@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
-import type { IUser } from "./auth.interface";
+import type { ILogin, IUser, IVerifyEmail } from "./auth.interface";
 import httpStatus from "http-status"
 import crypto from "crypto"
 import { redisClient } from "../../lib/redis";
@@ -16,9 +16,6 @@ import bcrypt from "bcryptjs";
 const register = async (payload:IUser)=>{
      const {name,password,imageURL,profile} = payload
      const email = payload.email.trim().toLowerCase();
-
-     
-
      const isExistUser = await prisma.users.findUnique(
       {
         where:{email}
@@ -89,7 +86,7 @@ const register = async (payload:IUser)=>{
 
 };
 
-const emailVerify = async(payload:any)=>{
+const emailVerify = async(payload:IVerifyEmail)=>{
    const {email,otp}= payload;
 
    const isExistUser = await prisma.users.findUnique({
@@ -225,8 +222,87 @@ const refreshToken = JwtUtils.createToken(
 
 }
 
+const login =async(payload : ILogin)=>{
+    
+    const {password}= payload;
+    const email = payload.email.trim().toLowerCase()
+
+    const isExistUser = await prisma.users.findUnique({
+        where: {
+            email
+        }
+    });
+
+    if(!isExistUser){
+        throw new AppError(httpStatus.BAD_REQUEST,"user not found")
+    };
+
+    if(!isExistUser.emailVerified){
+        throw new AppError(httpStatus.BAD_REQUEST,"your email is not verified please verified with re-registration");
+    };
+
+    if(isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED"){
+        throw new AppError(
+          httpStatus.BAD_REQUEST,
+          `your email is ${isExistUser.status}. contact with authority`,
+        );
+    };
+
+    const jwtPayload = {
+      userId: isExistUser.id,
+      name: isExistUser.name,
+      email: isExistUser.email,
+      role: isExistUser.role,
+    };
+
+    const accessToken = JwtUtils.createToken(
+      jwtPayload,
+      config.jwt_access_secret,
+      config.jwt_access_expires_in as SignOptions,
+    );
+
+    const refreshToken = JwtUtils.createToken(
+      jwtPayload,
+      config.jwt_refresh_secret,
+      config.jwt_refresh_expires_in as SignOptions,
+    );
+
+    const templatePath = path.join(
+      process.cwd(),
+      "/src/app/template/welcome.back.email.ejs",
+    );
+
+    const html = await ejs.renderFile(templatePath, {
+      name: isExistUser.name,
+      email: isExistUser.email,
+      frontendUrl: config.frontend_url
+    });
+
+    await transporter.sendMail({
+      from: config.sender_email,
+      to: email,
+      subject: "Welcome Back To Room_Nest",
+      html,
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+
+
+
+    
+} 
+
+const googleLogin = async ()=>{
+
+}
+
 
 export const AuthService = {
   register,
   emailVerify,
+  login,
+  googleLogin
 };

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome Back - Room Nest</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f4f7fb;
+      color: #333333;
+      line-height: 1.6;
+    }
+
+    .email-wrapper {
+      width: 100%;
+      padding: 40px 15px;
+      background-color: #f4f7fb;
+    }
+
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      padding: 30px 20px;
+      text-align: center;
+    }
+
+    .logo {
+      color: #ffffff;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .tagline {
+      margin-top: 6px;
+      color: #dbeafe;
+      font-size: 14px;
+    }
+
+    /* Content */
+    .content {
+      padding: 40px 35px;
+    }
+
+    .welcome-icon {
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 20px;
+      background-color: #eff6ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
+      text-align: center;
+      line-height: 70px;
+    }
+
+    .title {
+      text-align: center;
+      color: #111827;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .description {
+      text-align: center;
+      color: #6b7280;
+      font-size: 15px;
+      margin-bottom: 30px;
+    }
+
+    /* User Card */
+    .user-card {
+      background-color: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .user-card h3 {
+      color: #111827;
+      font-size: 17px;
+      margin-bottom: 15px;
+    }
+
+    .user-info {
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    .user-info strong {
+      color: #111827;
+    }
+
+    /* Features */
+    .features-title {
+      color: #111827;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .feature {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .feature-icon {
+      width: 28px;
+      min-width: 28px;
+      height: 28px;
+      background-color: #eff6ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      font-size: 14px;
+    }
+
+    .feature-text {
+      color: #6b7280;
+      font-size: 14px;
+      padding-top: 3px;
+    }
+
+    /* Button */
+    .button-wrapper {
+      text-align: center;
+      margin: 30px 0;
+    }
+
+    .cta {
+      display: inline-block;
+      background-color: #2563eb;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 13px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    /* Security */
+    .security-box {
+      background-color: #fff7ed;
+      border-left: 4px solid #f97316;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 25px;
+    }
+
+    .security-box p {
+      color: #7c2d12;
+      font-size: 13px;
+      margin: 0;
+    }
+
+    /* Footer */
+    .footer {
+      background-color: #f8fafc;
+      border-top: 1px solid #e5e7eb;
+      text-align: center;
+      padding: 25px 20px;
+    }
+
+    .footer p {
+      color: #9ca3af;
+      font-size: 12px;
+      margin-bottom: 8px;
+    }
+
+    .footer .brand {
+      color: #2563eb;
+      font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .email-wrapper {
+        padding: 20px 10px;
+      }
+
+      .content {
+        padding: 30px 20px;
+      }
+
+      .title {
+        font-size: 24px;
+      }
+
+      .description {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="email-wrapper">
+
+    <div class="email-container">
+
+      <!-- Header -->
+      <div class="header">
+        <div class="logo">ROOM NEST</div>
+        <div class="tagline">
+          Find Your Perfect Place
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+
+        <!-- Welcome Icon -->
+        <div class="welcome-icon">
+          👋
+        </div>
+
+        <!-- Title -->
+        <h1 class="title">
+          Welcome Back, <%= name %>!
+        </h1>
+
+        <!-- Description -->
+        <p class="description">
+          It's great to have you with us again.
+          Your Room Nest account is ready, so you can continue
+          exploring available properties and find a place that
+          feels right for you.
+        </p>
+
+        <!-- User Information -->
+        <div class="user-card">
+
+          <h3>
+            Your Account
+          </h3>
+
+          <p class="user-info">
+            <strong>Name:</strong>
+            <%= name %>
+          </p>
+
+          <p class="user-info">
+            <strong>Email:</strong>
+            <%= email %>
+          </p>
+
+        </div>
+
+        <!-- Features -->
+        <h3 class="features-title">
+          What you can do with Room Nest
+        </h3>
+
+        <div class="feature">
+          <div class="feature-icon">
+            🏠
+          </div>
+
+          <div class="feature-text">
+            Explore available rooms and properties.
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">
+            🔍
+          </div>
+
+          <div class="feature-text">
+            Search and discover places based on your preferences.
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">
+            ❤️
+          </div>
+
+          <div class="feature-text">
+            Find comfortable and convenient places to stay.
+          </div>
+        </div>
+
+        <div class="feature">
+          <div class="feature-icon">
+            📱
+          </div>
+
+          <div class="feature-text">
+            Manage your account and booking information easily.
+          </div>
+        </div>
+
+        <!-- CTA Button -->
+        <div class="button-wrapper">
+
+          <a
+            href="<%= frontendUrl %>"
+            class="cta"
+          >
+            Explore Room Nest
+          </a>
+
+        </div>
+
+        <!-- Security Notice -->
+        <div class="security-box">
+
+          <p>
+            <strong>Security Notice:</strong>
+            If you did not sign in to your Room Nest account,
+            please secure your account and contact our support
+            team if necessary.
+          </p>
+
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+
+        <p>
+          Thank you for choosing
+          <span class="brand">Room Nest</span>.
+        </p>
+
+        <p>
+          This is an automated email. Please do not reply directly
+          to this message.
+        </p>
+
+        <p>
+          © <%= new Date().getFullYear() %> Room Nest.
+          All rights reserved.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

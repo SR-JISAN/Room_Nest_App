@@ -22,3 +22,13 @@ export interface IRequestUser {
   name: string;
   role: Role;
 }
+
+export interface IVerifyEmail {
+    email: string
+    otp: string
+}
+
+export interface ILogin {
+    email : string
+    password: string
+}
