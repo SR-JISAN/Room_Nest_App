@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
-import type { ILogin, IUser, IVerifyEmail } from "./auth.interface";
+import type { IGoogleLogin, ILogin, IUser, IVerifyEmail } from "./auth.interface";
 import httpStatus from "http-status"
 import crypto from "crypto"
 import { redisClient } from "../../lib/redis";
@@ -8,10 +8,12 @@ import { transporter } from "../../lib/nodemailer";
 import config from "../../config";
 import path from "path";
 import ejs from "ejs"
-import { Role, UserStatus } from "../../../generated/prisma/enums";
+import { AuthProvider, Role, UserStatus } from "../../../generated/prisma/enums";
 import { JwtUtils } from "../../utils/jwt";
 import { SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import { TokenPayload } from "google-auth-library";
+import { GoogleClient } from "../../lib/google.client";
 
 const register = async (payload:IUser)=>{
      const {name,password,imageURL,profile} = payload
@@ -199,8 +201,9 @@ const refreshToken = JwtUtils.createToken(
  );
 
  const html = await ejs.renderFile(templatePath, {
-   name : verifiedUser.name,
-   email : verifiedUser.email
+   name: verifiedUser.name,
+   email: verifiedUser.email,
+   frontendUrl: config.frontend_url,
  });
 
  await transporter.sendMail({
@@ -295,9 +298,157 @@ const login =async(payload : ILogin)=>{
     
 } 
 
-const googleLogin = async ()=>{
+const googleLogin = async (payload:IGoogleLogin) => {
 
-}
+    let googleTokenPayload : TokenPayload | undefined | null = null
+    try {
+        const ticket = await GoogleClient.verifyIdToken({
+            idToken: payload.idToken,
+            audience: config.client_id
+        });
+
+        googleTokenPayload = ticket.getPayload();
+
+    } catch (error:any) {
+        console.log(error);
+        throw new AppError(httpStatus.BAD_REQUEST,"Invalid or Expired Your Token")
+    };
+
+    if(!googleTokenPayload){
+        throw new AppError(httpStatus.NOT_FOUND,"Token not found")
+    };
+
+    const isExistUserWithGoogleAuth = await prisma.users.findUnique({
+        where:{
+            email: googleTokenPayload.email,
+            role:Role.USER,
+            googleID:googleTokenPayload.sub
+        }
+    });
+
+    let googleUser = isExistUserWithGoogleAuth;
+    if (!googleTokenPayload.name) {
+      throw new AppError(httpStatus.NOT_FOUND,"User Name Not Found");
+    }
+    if (!googleTokenPayload.email) {
+      throw new AppError(httpStatus.NOT_FOUND, "User Email Not Found");
+    };
+    if(!googleUser){
+        const UserIsCredentials = await prisma.users.findUnique({
+            where:{
+                email: googleTokenPayload.email,
+                role: Role.USER,
+                authProvider:AuthProvider.CREDENTIALS
+            }
+        });
+
+        if(UserIsCredentials){
+            if(!UserIsCredentials.emailVerified){
+                throw new AppError(
+                  httpStatus.BAD_REQUEST,
+                  "email is not verified. Please verify it.",
+                );
+            };
+            if(UserIsCredentials.isDeleted || UserIsCredentials.status === UserStatus.DELETED){
+                throw new AppError(
+                  httpStatus.BAD_REQUEST,
+                  "You are deleted from Room Nest.",
+                );
+            };
+            if(UserIsCredentials.status === UserStatus.BLOCKED){
+                throw new AppError(
+                  httpStatus.BAD_REQUEST,
+                  "You are blocked by authority",
+                );
+            };
+
+          googleUser =  await prisma.users.update({
+                where:{
+                    id: UserIsCredentials.id
+                },
+                data:{
+                    googleID: googleTokenPayload.sub
+                }
+            });
+        }
+        else {
+            googleUser = await prisma.users.create({
+              data: {
+                name: googleTokenPayload.name,
+                email: googleTokenPayload.email,
+                role: Role.USER,
+                emailVerified: true,
+                authProvider: AuthProvider.GOOGLE,
+                googleID: googleTokenPayload.sub,
+                imageURL: googleTokenPayload.picture,
+                needPasswordChange:true,
+                profiles:{
+                    create:{
+                        address:""
+                    }
+                }
+              }
+            });
+        }
+    };
+ 
+    if (!googleUser) {
+      throw new AppError(httpStatus.NOT_FOUND,"User Not Found");
+    }
+
+    if (googleUser.status === UserStatus.BLOCKED) {
+      throw new AppError(httpStatus.BAD_REQUEST,"User Blocked By Authority. Contact Us");
+    }
+
+    if (googleUser.isDeleted || googleUser.status === UserStatus.DELETED) {
+      throw new AppError(httpStatus.BAD_REQUEST,"User Deleted Re-Register");
+    }
+
+    if (googleUser.password !== null && googleUser.googleID !== null) {
+      throw new AppError(httpStatus.BAD_REQUEST,"Password Incorrect Log In With Google");
+    }
+
+    const jwtPayload = {
+      userId: googleUser.id,
+      name: googleUser.name,
+      email: googleUser.email,
+      role: googleUser.role,
+    };
+
+    const accessToken = JwtUtils.createToken(
+      jwtPayload,
+      config.jwt_access_secret,
+      config.jwt_access_expires_in as SignOptions,
+    );
+    const refreshToken = JwtUtils.createToken(
+      jwtPayload,
+      config.jwt_refresh_secret,
+      config.jwt_refresh_expires_in as SignOptions,
+    );
+
+   const templatePath = path.join(
+     process.cwd(),
+     "/src/app/template/welcome.email.ejs",
+   );
+
+   const html = await ejs.renderFile(templatePath, {
+     name: googleUser.name,
+     email: googleUser.email,
+     frontendUrl: config.frontend_url
+   });
+
+   await transporter.sendMail({
+     from: config.sender_email,
+     to: googleUser.email,
+     subject: "Welcome To Room_Nest",
+     html,
+   });
+
+    return {
+      accessToken,
+      refreshToken,
+    };
+};
 
 
 export const AuthService = {

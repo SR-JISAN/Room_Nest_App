@@ -40,7 +40,7 @@ const login = CatchAsync(async (req: Request, res: Response) => {
 });
 const googleLogin = CatchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
-  const result = await AuthService.googleLogin();
+  const result = await AuthService.googleLogin(payload);
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
@@ -52,5 +52,6 @@ const googleLogin = CatchAsync(async (req: Request, res: Response) => {
 export const AuthController = {
   register,
   emailVerify,
-  login
+  login,
+  googleLogin,
 };

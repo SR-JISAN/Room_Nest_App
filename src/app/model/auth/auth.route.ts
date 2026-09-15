@@ -8,7 +8,7 @@ const router = Router()
 
 router.post("/register",ValidateRequest(RegistrationValidationZODSchema),AuthController.register)
 router.post("/email-verify",ValidateRequest(VerifyEmailZodSchema), AuthController.emailVerify)
-
+router.post("/google-login",AuthController.googleLogin)
 router.post("/login",ValidateRequest(LoginValidationZodSchema),AuthController.login )
 
 
