@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
-import type { IGoogleLogin, ILogin, IUser, IVerifyEmail } from "./auth.interface";
+import type { IGoogleLogin, ILogin, IUpdatePassword, IUser, IVerifyEmail } from "./auth.interface";
 import httpStatus from "http-status"
 import crypto from "crypto"
 import { redisClient } from "../../lib/redis";
@@ -14,6 +14,7 @@ import { SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { TokenPayload } from "google-auth-library";
 import { GoogleClient } from "../../lib/google.client";
+import { IRequestUser } from "../../middleware/check.auth";
 
 const register = async (payload:IUser)=>{
      const {name,password,imageURL,profile} = payload
@@ -251,6 +252,25 @@ const login =async(payload : ILogin)=>{
         );
     };
 
+
+    if (!isExistUser.password) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "You have to set a password",
+      );
+    }
+
+    const isPasswordMatched = await bcrypt.compare(
+      password,
+      isExistUser.password,
+    );
+    if (!isPasswordMatched) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Current password is incorrect",
+      );
+    }
+
     const jwtPayload = {
       userId: isExistUser.id,
       name: isExistUser.name,
@@ -450,10 +470,90 @@ const googleLogin = async (payload:IGoogleLogin) => {
     };
 };
 
+const updatePassword = async(payload:IUpdatePassword, user:IRequestUser)=>{
+  const {currentPassword,newPassword,confirmPassword}= payload;
+  const isUserExist = await prisma.users.findUnique({
+    where: {
+      id: user.userId,
+    },
+  });
+
+  if (!isUserExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+  }
+  if (!isUserExist.emailVerified) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "your email is not verified please verified with re-registration",
+    );
+  }
+
+  if (isUserExist.status === "BLOCKED" || isUserExist.status === "DELETED") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `your email is ${isUserExist.status}. contact with authority`,
+    );
+  };
+
+  if(isUserExist.password === null || !isUserExist.password ){
+    throw new AppError(httpStatus.BAD_REQUEST,"You didn't set password yet.")
+  };
+
+  const isPasswordMatched = await bcrypt.compare(currentPassword,isUserExist.password);
+
+  if(!isPasswordMatched){
+    throw new AppError(httpStatus.BAD_REQUEST, "Current password is incorrect");
+  };
+
+  if(newPassword.length !== confirmPassword.length || newPassword !== confirmPassword){
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Password and confirm password do not match",
+    );
+  };
+
+  const hashPassword =await bcrypt.hash(confirmPassword,Number(config.bcrypt_salt_rounds))
+
+  const result = await prisma.users.update({
+    where: {
+      id: isUserExist.id,
+    },
+    data: {
+      password: hashPassword,
+      needPasswordChange:false
+    },
+    omit:{
+      password:true
+    }
+  });
+
+   const templatePath = path.join(
+     process.cwd(),
+     "/src/app/template/password-updated.email.ejs",
+   );
+
+   const html = await ejs.renderFile(templatePath, {
+     name: isUserExist.name,
+     email: isUserExist.email,
+     frontendUrl: config.frontend_url,
+   });
+
+   await transporter.sendMail({
+     from: config.sender_email,
+     to: isUserExist.email,
+     subject: "Your password was updated successfully.",
+     html,
+   });
+
+  return result
+
+}
+
 
 export const AuthService = {
   register,
   emailVerify,
   login,
-  googleLogin
+  googleLogin,
+  updatePassword
 };

@@ -16,12 +16,12 @@ interface IProfile {
   dateOfBirth?: string;
 }
 
-export interface IRequestUser {
-  userId: string;
-  email: string;
-  name: string;
-  role: Role;
-}
+// export interface IRequestUser {
+//   userId: string;
+//   email: string;
+//   name: string;
+//   role: Role;
+// }
 
 export interface IVerifyEmail {
     email: string
@@ -35,4 +35,10 @@ export interface ILogin {
 
 export interface IGoogleLogin{
     idToken:string
+}
+
+export interface IUpdatePassword{
+  currentPassword: string
+  newPassword:string
+  confirmPassword:string
 }

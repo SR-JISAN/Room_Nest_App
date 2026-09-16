@@ -3,11 +3,16 @@ import { CatchAsync } from "../../utils/catchAsync"
 import { SendResponse } from "../../utils/sendResponse"
 import httpStatus from "http-status";
 import { AuthService } from "./auth.service";
+import { IRequestUser } from "../../middleware/check.auth";
+import { accessTokenCookies, refreshTokenCookies } from "../../utils/cookies";
+
 
 
 const register = CatchAsync(async(req:Request,res:Response)=>{
    const payload =req.body;
     await AuthService.register(payload)
+
+    
     SendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
@@ -20,6 +25,17 @@ const register = CatchAsync(async(req:Request,res:Response)=>{
 const emailVerify = CatchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.emailVerify(payload);
+  res.cookie(
+      "accessToken",
+      result.accessToken,
+      accessTokenCookies
+      
+    );
+  res.cookie(
+      "refreshToken",
+      result.accessToken,
+      refreshTokenCookies
+    )
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,
@@ -31,6 +47,9 @@ const emailVerify = CatchAsync(async (req: Request, res: Response) => {
 const login = CatchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.login(payload);
+
+  res.cookie("accessToken", result.accessToken, accessTokenCookies);
+  res.cookie("refreshToken", result.accessToken, refreshTokenCookies);
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
@@ -38,9 +57,13 @@ const login = CatchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 const googleLogin = CatchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const result = await AuthService.googleLogin(payload);
+
+  res.cookie("accessToken", result.accessToken, accessTokenCookies);
+  res.cookie("refreshToken", result.accessToken, refreshTokenCookies);
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
@@ -48,10 +71,24 @@ const googleLogin = CatchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const updatePassword = CatchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const user = req.user as unknown as IRequestUser
+
+  const result = await AuthService.updatePassword(payload,user);
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Your password was updated",
+    data: result,
+  });
+});
+
 
 export const AuthController = {
   register,
   emailVerify,
   login,
   googleLogin,
+  updatePassword,
 };
