@@ -83,6 +83,17 @@ const updatePassword = CatchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const resetPassword = CatchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+
+   await AuthService.resetPassword(payload);
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "An otp sent to your email. please verify it to reset password",
+    data: null,
+  });
+});
 
 
 export const AuthController = {
@@ -91,4 +102,5 @@ export const AuthController = {
   login,
   googleLogin,
   updatePassword,
+  resetPassword,
 };

@@ -109,6 +109,18 @@ export const UpdatePasswordZodSchema = z.object({
     .regex(/[a-z]/, "Password must contain one lowercase letter")
     .regex(/[0-9]/, "Password must contain one number")
     .regex(/[^A-Za-z0-9]/, "Password must contain one special character"),
-  });
+});
+export const ResetPasswordZodSchema = z.object({
+  email: z.email("Use a valid email").refine(
+    (email) => {
+      const domain = email.split("@")[1]?.toLowerCase();
+
+      return allowedEmailDomains.includes(domain);
+    },
+    {
+      message: "Please use a supported email provider",
+    },
+  ),
+})
 
 

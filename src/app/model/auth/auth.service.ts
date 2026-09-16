@@ -1,6 +1,6 @@
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
-import type { IGoogleLogin, ILogin, IUpdatePassword, IUser, IVerifyEmail } from "./auth.interface";
+import type { IGoogleLogin, ILogin, IResetPassword, IUpdatePassword, IUser, IVerifyEmail } from "./auth.interface";
 import httpStatus from "http-status"
 import crypto from "crypto"
 import { redisClient } from "../../lib/redis";
@@ -39,7 +39,7 @@ const register = async (payload:IUser)=>{
     const key = `verify-register-email:${email}`
 
     const expiration = 2*60;
-    const expiresAt = new Date(Date.now() + expiration * 1000);
+    const expiresAt = expiration / 60;
 
     await redisClient.set(key,otp,{
         expiration:{
@@ -67,16 +67,12 @@ const register = async (payload:IUser)=>{
      );
     const templatePath = path.join(process.cwd(),"/src/app/template/email.verify.ejs")
 
-    const formattedExpiresAt = expiresAt.toLocaleString("en-GB", {
-        timeZone: "Asia/Dhaka",
-        dateStyle: "medium",
-        timeStyle: "short",
-    });
+    
     
     const html = await ejs.renderFile(templatePath, {
       name,
       otp,
-      expiresAt: formattedExpiresAt,
+      expiresAt: expiresAt,
     });
 
 
@@ -549,11 +545,94 @@ const updatePassword = async(payload:IUpdatePassword, user:IRequestUser)=>{
 
 }
 
+const resetPassword = async(payload:IResetPassword)=>{
+  const { email } = payload;
+
+  const isUserExist = await prisma.users.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (!isUserExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+  }
+  if (!isUserExist.emailVerified) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "your email is not verified please verified with re-registration",
+    );
+  }
+
+  if (isUserExist.status === "BLOCKED" || isUserExist.status === "DELETED") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `your email is ${isUserExist.status}. contact with authority`,
+    );
+  }
+
+  if (isUserExist.password !== null || isUserExist.password || !isUserExist.needPasswordChange) {
+    throw new AppError(httpStatus.BAD_REQUEST, "You already set password.");
+  };
+
+  const key = `reset-user-password ${isUserExist.email}`;
+  
+  const generateOtp = ()=>{
+    const cleanUUid = crypto.randomUUID().replace("/-/g", "");
+
+    const base6 = cleanUUid.slice(0, 6);
+
+    const otp = base6
+      .split("")
+      .map((char) => {
+        return Math.random() > 0.5 ? char.toUpperCase() : char.toLowerCase();
+      })
+      .join("")
+      .toString();
+
+      return  otp
+  }
+
+  const otp = generateOtp()
+    
+
+
+  const expired = 2*60;
+  const expiredAt = expired/60
+  
+
+   await redisClient.set(key,otp,{
+    expiration:{
+      type:"EX",
+      value:expired
+    }
+  });
+
+  const templatePath = path.join(process.cwd(),"/src/app/template/email.verify.ejs")
+
+  const html = await ejs.renderFile(templatePath, {
+    name: isUserExist.name,
+    otp,
+    expiresAt: expiredAt,
+  });
+
+
+  await transporter.sendMail({
+    from:config.sender_email,
+    to: isUserExist.email,
+    subject: "Reset your password",
+    html
+  })
+};
+
+
+
 
 export const AuthService = {
   register,
   emailVerify,
   login,
   googleLogin,
-  updatePassword
+  updatePassword,
+  resetPassword
 };

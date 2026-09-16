@@ -16,12 +16,6 @@ interface IProfile {
   dateOfBirth?: string;
 }
 
-// export interface IRequestUser {
-//   userId: string;
-//   email: string;
-//   name: string;
-//   role: Role;
-// }
 
 export interface IVerifyEmail {
     email: string
@@ -41,4 +35,8 @@ export interface IUpdatePassword{
   currentPassword: string
   newPassword:string
   confirmPassword:string
-}
+};
+
+export interface IResetPassword {
+  email: string
+};
