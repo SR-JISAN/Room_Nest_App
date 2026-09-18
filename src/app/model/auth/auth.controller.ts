@@ -88,7 +88,7 @@ const refreshToken = CatchAsync(async (req: Request, res: Response) => {
   res.cookie("accessToken", accessToken, accessTokenCookies);
 
   res.cookie("refreshToken", newRefreshToken, refreshTokenCookies);
-  
+
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
@@ -136,6 +136,18 @@ const resetPasswordVerified = CatchAsync(
     });
   },
 );
+const myProfile = CatchAsync(async (req: Request, res: Response) => {
+ 
+  const user = req.user as IRequestUser;
+
+  const result = await AuthService.myProfile(user);
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Successfully get your profile",
+    data: result,
+  });
+});
 
 
 export const AuthController = {
@@ -146,5 +158,6 @@ export const AuthController = {
   updatePassword,
   resetPassword,
   resetPasswordVerified,
-  refreshToken
+  refreshToken,
+  myProfile,
 };

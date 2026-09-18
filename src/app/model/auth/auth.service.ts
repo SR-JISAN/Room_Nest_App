@@ -771,7 +771,46 @@ const refreshToken = async(token:string)=>{
         refreshToken,
       };
 
-  }
+  };
+
+
+const myProfile = async(user:IRequestUser)=>{
+    const isExistUser = await prisma.users.findUnique({
+      where: {
+        email: user.email,
+      },
+    });
+    if (!isExistUser) {
+      throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+    }
+
+    if (!isExistUser.emailVerified) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "your email is not verified please verified with re-registration",
+      );
+    }
+
+    if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `your email is ${isExistUser.status}. contact with authority`,
+      );
+    };
+
+    const result = await prisma.users.findUnique({
+      where:{
+        id: isExistUser.id
+      },
+      include:{
+        profiles: true
+      },omit:{
+        password:true
+      }
+    });
+
+    return result;
+};
 
 
 
@@ -785,4 +824,5 @@ export const AuthService = {
   resetPassword,
   resetPasswordVerified,
   refreshToken,
+  myProfile,
 };
