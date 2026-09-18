@@ -10,12 +10,11 @@ import path from "path";
 import ejs from "ejs"
 import { AuthProvider, Role, UserStatus } from "../../../generated/prisma/enums";
 import { JwtUtils } from "../../utils/jwt";
-import { SignOptions } from "jsonwebtoken";
+import { JwtPayload, SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { TokenPayload } from "google-auth-library";
 import { GoogleClient } from "../../lib/google.client";
 import { IRequestUser } from "../../middleware/check.auth";
-import { Result } from "pg";
 import { transporter } from "../../lib/nodemailer";
 
 const register = async (payload:IUser)=>{
@@ -717,7 +716,62 @@ const updatePassword = await prisma.users.update({
 })
 
 return updatePassword;
-}
+};
+
+
+const refreshToken = async(token:string)=>{
+    const verifiedRefreshToken = JwtUtils.verifyToken(
+      token,
+      config.jwt_refresh_secret,
+    );
+
+    if (!verifiedRefreshToken.success || !verifiedRefreshToken.data) {
+      throw new AppError(
+        httpStatus.UNAUTHORIZED,
+        config.node_env === "development"
+          ? verifiedRefreshToken.error
+          : "Invalid refresh token",
+      );
+    };
+
+    const data = verifiedRefreshToken.data as JwtPayload;
+
+    const user = await prisma.users.findUnique({
+      where: { id: data.userId },
+    });
+
+    if (!user || user.isDeleted || user.status !== UserStatus.ACTIVE) {
+      throw new AppError(
+        httpStatus.UNAUTHORIZED,
+        "User is inactive or not found",
+      );
+    };
+
+    const jwtPayload = {
+      userId: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+
+    	const accessToken = JwtUtils.createToken(
+        jwtPayload,
+        config.jwt_access_secret,
+        config.jwt_access_expires_in as SignOptions,
+      );
+
+      const refreshToken = JwtUtils.createToken(
+        jwtPayload,
+        config.jwt_refresh_secret,
+        config.jwt_refresh_expires_in as SignOptions,
+      );
+
+      return {
+        accessToken,
+        refreshToken,
+      };
+
+  }
 
 
 
@@ -730,4 +784,5 @@ export const AuthService = {
   updatePassword,
   resetPassword,
   resetPasswordVerified,
+  refreshToken,
 };

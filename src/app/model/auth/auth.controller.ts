@@ -5,6 +5,7 @@ import httpStatus from "http-status";
 import { AuthService } from "./auth.service";
 import { IRequestUser } from "../../middleware/check.auth";
 import { accessTokenCookies, refreshTokenCookies } from "../../utils/cookies";
+import AppError from "../../utils/appError";
 
 
 
@@ -33,7 +34,7 @@ const emailVerify = CatchAsync(async (req: Request, res: Response) => {
     );
   res.cookie(
       "refreshToken",
-      result.accessToken,
+      result.refreshToken,
       refreshTokenCookies
     )
   SendResponse(res, {
@@ -49,7 +50,7 @@ const login = CatchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.login(payload);
 
   res.cookie("accessToken", result.accessToken, accessTokenCookies);
-  res.cookie("refreshToken", result.accessToken, refreshTokenCookies);
+  res.cookie("refreshToken", result.refreshToken, refreshTokenCookies);
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
@@ -63,12 +64,39 @@ const googleLogin = CatchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.googleLogin(payload);
 
   res.cookie("accessToken", result.accessToken, accessTokenCookies);
-  res.cookie("refreshToken", result.accessToken, refreshTokenCookies);
+  res.cookie("refreshToken", result.refreshToken, refreshTokenCookies);
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.OK,
     message: "Your have been successfully Login by google",
     data: result,
+  });
+});
+
+
+const refreshToken = CatchAsync(async (req: Request, res: Response) => {
+  if (!req.cookies.refreshToken) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "Refresh token is missing");
+  }
+   
+  const token = req.cookies.refreshToken;
+
+  const result = await AuthService.refreshToken(token);
+
+   const {accessToken, refreshToken: newRefreshToken} =result;
+
+  res.cookie("accessToken", accessToken, accessTokenCookies);
+
+  res.cookie("refreshToken", newRefreshToken, refreshTokenCookies);
+  
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "New tokens generated successfully",
+    data: {
+      accessToken,
+      refreshToken: newRefreshToken,
+    },
   });
 });
 const updatePassword = CatchAsync(async (req: Request, res: Response) => {
@@ -118,4 +146,5 @@ export const AuthController = {
   updatePassword,
   resetPassword,
   resetPasswordVerified,
+  refreshToken
 };

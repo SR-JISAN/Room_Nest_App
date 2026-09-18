@@ -24,10 +24,12 @@ router.post(
 
 router.patch(
   "/reset-password-verified",
-  // ValidateRequest(ResetPasswordVerifiedZodSchema),
+  ValidateRequest(ResetPasswordVerifiedZodSchema),
   auth(Role.USER, Role.ADMIN, Role.LANDLORD),
   AuthController.resetPasswordVerified,
 );
+
+router.post("/refresh-token", AuthController.refreshToken);
 
 
 

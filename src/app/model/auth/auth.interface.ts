@@ -44,3 +44,4 @@ export interface IResetPasswordVerified {
   otp: string
   newPassword : string
 };
+

@@ -124,14 +124,16 @@ export const ResetPasswordZodSchema = z.object({
 })
 
 export const ResetPasswordVerifiedZodSchema = z.object({
-  setPassword: z
+  otp: z
+    .string("use valid otp")
+    .length(6, "OTP must contain exactly 6 characters"),
+  newPassword: z
     .string("Use a strong password")
     .min(6, "Password must contain minimum 6 characters")
     .regex(/[A-Z]/, "Password must contain one uppercase letter")
     .regex(/[a-z]/, "Password must contain one lowercase letter")
     .regex(/[0-9]/, "Password must contain one number")
     .regex(/[^A-Za-z0-9]/, "Password must contain one special character"),
-  
 });
 
 
