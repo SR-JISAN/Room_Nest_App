@@ -94,6 +94,20 @@ const resetPassword = CatchAsync(async (req: Request, res: Response) => {
     data: null,
   });
 });
+const resetPasswordVerified = CatchAsync(
+  async (req: Request, res: Response) => {
+    const payload = req.body;
+    const user = req.user as IRequestUser
+
+  const result =  await AuthService.resetPasswordVerified(payload,user);
+    SendResponse(res, {
+      success: true,
+      statusCode: httpStatus.OK,
+      message: "You updated your password successfully",
+      data: result,
+    });
+  },
+);
 
 
 export const AuthController = {
@@ -103,4 +117,5 @@ export const AuthController = {
   googleLogin,
   updatePassword,
   resetPassword,
+  resetPasswordVerified,
 };

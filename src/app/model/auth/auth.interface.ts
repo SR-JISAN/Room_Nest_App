@@ -40,3 +40,7 @@ export interface IUpdatePassword{
 export interface IResetPassword {
   email: string
 };
+export interface IResetPasswordVerified {
+  otp: string
+  newPassword : string
+};

@@ -1,15 +1,15 @@
 model Profiles {
-  id          String    @id @default(uuid())
-  userId      String    @unique
-  bio         String?
-  address     String?
+  id            String    @id @default(uuid())
+  userId        String    @unique
+  bio           String?
+  address       String?
+  occupation    String?
+  dateOfBirth   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   contactNumber String?
-  occupation  String?
-  dateOfBirth DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        Users     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  user          Users     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([id,userId])
+  @@index([id, userId])
   @@map("profile")
 }

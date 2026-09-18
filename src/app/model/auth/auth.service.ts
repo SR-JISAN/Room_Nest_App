@@ -1,10 +1,10 @@
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
-import type { IGoogleLogin, ILogin, IResetPassword, IUpdatePassword, IUser, IVerifyEmail } from "./auth.interface";
+import type { IGoogleLogin, ILogin, IResetPassword, IResetPasswordVerified, IUpdatePassword, IUser, IVerifyEmail } from "./auth.interface";
 import httpStatus from "http-status"
 import crypto from "crypto"
 import { redisClient } from "../../lib/redis";
-import { transporter } from "../../lib/nodemailer";
+
 import config from "../../config";
 import path from "path";
 import ejs from "ejs"
@@ -15,6 +15,8 @@ import bcrypt from "bcryptjs";
 import { TokenPayload } from "google-auth-library";
 import { GoogleClient } from "../../lib/google.client";
 import { IRequestUser } from "../../middleware/check.auth";
+import { Result } from "pg";
+import { transporter } from "../../lib/nodemailer";
 
 const register = async (payload:IUser)=>{
      const {name,password,imageURL,profile} = payload
@@ -546,6 +548,8 @@ const updatePassword = async(payload:IUpdatePassword, user:IRequestUser)=>{
 }
 
 const resetPassword = async(payload:IResetPassword)=>{
+
+
   const { email } = payload;
 
   const isUserExist = await prisma.users.findUnique({
@@ -564,7 +568,7 @@ const resetPassword = async(payload:IResetPassword)=>{
     );
   }
 
-  if (isUserExist.status === "BLOCKED" || isUserExist.status === "DELETED") {
+  if (isUserExist.status === "BLOCKED"  || isUserExist.status === "DELETED") {
     throw new AppError(
       httpStatus.BAD_REQUEST,
       `your email is ${isUserExist.status}. contact with authority`,
@@ -574,6 +578,10 @@ const resetPassword = async(payload:IResetPassword)=>{
   if (isUserExist.password !== null || isUserExist.password || !isUserExist.needPasswordChange) {
     throw new AppError(httpStatus.BAD_REQUEST, "You already set password.");
   };
+
+  if(isUserExist.authProvider === AuthProvider.CREDENTIALS){
+    throw new AppError(httpStatus.BAD_REQUEST,"You are a credentials user so you can't reset password")
+  }
 
   const key = `reset-user-password ${isUserExist.email}`;
   
@@ -625,6 +633,92 @@ const resetPassword = async(payload:IResetPassword)=>{
   })
 };
 
+const resetPasswordVerified = async(payload:IResetPasswordVerified, user: IRequestUser)=>{
+   const {otp,newPassword} = payload
+  
+  const isExistUser = await prisma.users.findUnique({
+    where: {
+      email: user.email,
+    },
+  });
+  if (!isExistUser) {
+    throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+  }
+
+  if (!isExistUser.emailVerified) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "your email is not verified please verified with re-registration",
+    );
+  }
+
+  if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `your email is ${isExistUser.status}. contact with authority`,
+    );
+  }
+
+  if (
+    isExistUser.password !== null ||
+    isExistUser.password ||
+    !isExistUser.needPasswordChange
+  ) {
+    throw new AppError(httpStatus.BAD_REQUEST, "You already set password.");
+  };
+ const key = `reset-user-password ${isExistUser.email}`;
+
+const redisOtp =await redisClient.get(key);
+
+
+if (!redisOtp) {
+  throw new AppError(
+    httpStatus.BAD_REQUEST,
+    "OTP expired. Please request a new OTP.",
+  );
+};
+
+if(redisOtp !== otp){
+  throw new AppError(httpStatus.BAD_REQUEST,"OTP doesn't matched. please give a valid OTP!!")
+}
+
+const hashPassword = await bcrypt.hash(newPassword,Number(config.bcrypt_salt_rounds))
+
+const templatePath = path.join(
+  process.cwd(),
+  "/src/app/template/reset.password.ejs",
+);
+
+const html = await ejs.renderFile(templatePath, {
+  name: isExistUser.name,
+  frontendUrl: config.frontend_url,
+});
+
+const updatePassword = await prisma.users.update({
+  where:{
+    email:isExistUser.email
+  },
+  data:{
+    password:hashPassword,
+    needPasswordChange:false
+  },
+  omit:{
+    password:true
+  }
+})
+
+
+
+ await transporter.sendMail({
+  from: config.sender_email,
+  to:isExistUser.email,
+  subject:"You have successfully Reset your Password",
+  html
+})
+
+return updatePassword;
+}
+
 
 
 
@@ -634,5 +728,6 @@ export const AuthService = {
   login,
   googleLogin,
   updatePassword,
-  resetPassword
+  resetPassword,
+  resetPasswordVerified,
 };
