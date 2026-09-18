@@ -813,6 +813,11 @@ const myProfile = async(user:IRequestUser)=>{
 };
 
 
+const logout = async()=>{
+  return null
+};
+
+
 
 
 export const AuthService = {
@@ -825,4 +830,5 @@ export const AuthService = {
   resetPasswordVerified,
   refreshToken,
   myProfile,
+  logout,
 };

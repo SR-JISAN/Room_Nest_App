@@ -6,6 +6,7 @@ import { AuthService } from "./auth.service";
 import { IRequestUser } from "../../middleware/check.auth";
 import { accessTokenCookies, refreshTokenCookies } from "../../utils/cookies";
 import AppError from "../../utils/appError";
+import config from "../../config";
 
 
 
@@ -149,6 +150,32 @@ const myProfile = CatchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const logout = CatchAsync(async (req: Request, res: Response) => {
+ 
+  const result = await AuthService.logout();
+
+res.clearCookie("accessToken", {
+  httpOnly: true,
+  secure: config.node_env === "production",
+  sameSite: config.node_env === "production" ? "none" : "lax",
+  path: "/",
+});
+
+res.clearCookie("refreshToken", {
+  httpOnly: true,
+  secure: config.node_env === "production",
+  sameSite: config.node_env === "production" ? "none" : "lax",
+  path: "/",
+});
+
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "logout successful",
+    data: result,
+  });
+});
+
 
 export const AuthController = {
   register,
@@ -160,4 +187,5 @@ export const AuthController = {
   resetPasswordVerified,
   refreshToken,
   myProfile,
+  logout,
 };

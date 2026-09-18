@@ -31,7 +31,13 @@ router.patch(
 
 router.post("/refresh-token", AuthController.refreshToken);
 
-router.get("/my-profile",auth(Role.ADMIN,Role.LANDLORD,Role.USER),AuthController.myProfile)
+router.get("/my-profile",auth(Role.ADMIN,Role.LANDLORD,Role.USER),AuthController.myProfile);
+
+router.post(
+  "/logout",
+  auth(Role.ADMIN, Role.LANDLORD, Role.USER),
+  AuthController.logout,
+);
 
 
 
