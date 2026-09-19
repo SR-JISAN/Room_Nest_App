@@ -1,12 +1,14 @@
 model Amenities {
   id String @id @default(uuid())
 
-  name String @unique
+  amenityName String @unique
 
   propertyAmenities PropertyAmenities[]
   roomAmenities     RoomAmenities[]
 
-  createdAt DateTime @default(now())
+  createdAt          DateTime     @default(now())
+  isDeleted          Boolean      @default(false)
+  deletedAt          DateTime?
 
   @@map("amenities")
 }
