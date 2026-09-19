@@ -1,0 +1,16 @@
+model RoomAmenities {
+  id String @id @default(uuid())
+
+  roomId String
+  room   Rooms  @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  amenityId String
+  amenity   Amenities @relation(fields: [amenityId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([roomId, amenityId])
+  @@index([roomId])
+  @@index([amenityId])
+  @@map("roomAmenities")
+}

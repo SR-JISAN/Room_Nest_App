@@ -16,6 +16,7 @@ model Users {
   createdAt          DateTime     @default(now())
   updatedAt          DateTime     @updatedAt
   profiles           Profiles?
+  properties         Properties[]
 
   @@index([id, email, role])
   @@map("users")

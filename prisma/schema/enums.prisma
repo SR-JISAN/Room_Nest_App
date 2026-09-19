@@ -14,3 +14,29 @@ enum UserStatus {
   BLOCKED
   DELETED
 }
+
+enum PropertyType {
+  APARTMENT
+  HOUSE
+  SUBLET
+  HOSTEL
+  ROOM
+}
+
+enum PropertyStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RoomType {
+  SINGLE
+  SHEAR
+  MASTER
+}
+
+enum RoomStatus {
+  AVAILABLE
+  UNAVAILABLE
+  BOOKED
+}

@@ -1,0 +1,12 @@
+model Amenities {
+  id String @id @default(uuid())
+
+  name String @unique
+
+  propertyAmenities PropertyAmenities[]
+  roomAmenities     RoomAmenities[]
+
+  createdAt DateTime @default(now())
+
+  @@map("amenities")
+}
