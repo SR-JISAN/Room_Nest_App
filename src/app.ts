@@ -7,6 +7,7 @@ import { globalErrorHandler } from "./app/middleware/global.error";
 import cookieParser from "cookie-parser";
 import { notFound } from "./app/middleware/not.found";
 import { AuthRoute } from "./app/model/auth/auth.route";
+import { UserRouter } from "./app/model/users/user.route";
 
 const app: Application = express();
 
@@ -24,7 +25,8 @@ app.use(cookieParser());
 
 //all api routes 
 
-app.use("/api/auth", AuthRoute)
+app.use("/api/auth", AuthRoute);
+app.use("/api/users", UserRouter);
 
 
 

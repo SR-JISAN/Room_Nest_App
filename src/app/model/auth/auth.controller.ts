@@ -151,8 +151,8 @@ const myProfile = CatchAsync(async (req: Request, res: Response) => {
 });
 
 const logout = CatchAsync(async (req: Request, res: Response) => {
- 
-  const result = await AuthService.logout();
+   const user = req.user as IRequestUser
+  const result = await AuthService.logout(user);
 
 res.clearCookie("accessToken", {
   httpOnly: true,

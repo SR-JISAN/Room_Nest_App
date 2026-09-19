@@ -813,8 +813,30 @@ const myProfile = async(user:IRequestUser)=>{
 };
 
 
-const logout = async()=>{
-  return null
+const logout = async(user:IRequestUser)=>{
+  const isExistUser = await prisma.users.findUnique({
+    where: {
+      email: user.email,
+    },
+  });
+  if (!isExistUser) {
+    throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+  }
+
+  if (!isExistUser.emailVerified) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "your email is not verified please verified with re-registration",
+    );
+  }
+
+  if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `your email is ${isExistUser.status}. contact with authority`,
+    );
+  }
+  return null;
 };
 
 

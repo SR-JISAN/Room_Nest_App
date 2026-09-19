@@ -4,10 +4,10 @@ model Profiles {
   bio           String?
   address       String?
   occupation    String?
+  contactNumber String?
   dateOfBirth   DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  contactNumber String?
   user          Users     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([id, userId])
