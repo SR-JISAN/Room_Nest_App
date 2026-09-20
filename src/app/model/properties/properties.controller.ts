@@ -13,8 +13,24 @@ const createProperties = CatchAsync(async (req: Request, res: Response) => {
  const result =  await PropertiesService.createProperties(payload,user);
   SendResponse(res, {
     success: true,
+    statusCode: httpStatus.CREATED,
+    message: "Properties & Room Created Successfully",
+    data: result,
+  });
+});
+const updateProperties = CatchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const user = req.user as IRequestUser;
+  const propertyId = req.params.propertyId as string;
+
+  const result = await PropertiesService.updateProperties(
+    propertyId , payload,
+    user,
+  );
+  SendResponse(res, {
+    success: true,
     statusCode: httpStatus.OK,
-    message: "An otp sent to your email. please verify it to reset password",
+    message: "Property Updated Successfully",
     data: result,
   });
 });
@@ -22,4 +38,5 @@ const createProperties = CatchAsync(async (req: Request, res: Response) => {
 
 export const PropertyController = {
   createProperties,
+  updateProperties,
 };

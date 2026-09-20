@@ -23,3 +23,14 @@ export interface IProperty {
   amenities: string[];
 }
 
+export interface IUpdateProperty {
+  title?: string;
+  description?: string;
+  address?: string;
+  area?: string;
+  city?: string;
+  latitude?: string;
+  longitude?: string;
+  propertyType?: PropertyType;
+}
+

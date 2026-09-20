@@ -3,7 +3,7 @@ import { IRequestUser } from "../../middleware/check.auth";
 import httpStatus from "http-status"
 import AppError from "../../utils/appError";
 import { Role } from "../../../generated/prisma/enums";
-import { IProperty } from "./properties.interface";
+import { IProperty, IUpdateProperty } from "./properties.interface";
 
  
 
@@ -107,9 +107,70 @@ import { IProperty } from "./properties.interface";
    return result;
  };
 
+ const updateProperties = async (
+   propertyId: string,
+   payload: IUpdateProperty,
+   user: IRequestUser,
+ ) => {
+   const isExistUser = await prisma.users.findUnique({
+     where: {
+       email: user.email,
+     },
+   });
+
+   if (!isExistUser) {
+     throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+   }
+
+   if (!isExistUser.emailVerified) {
+     throw new AppError(httpStatus.BAD_REQUEST, "Your email is not verified");
+   }
+
+   if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       `Your account is ${isExistUser.status}. Contact with authority.`,
+     );
+   }
+
+   if (isExistUser.role === Role.USER) {
+     throw new AppError(
+       httpStatus.UNAUTHORIZED,
+       "You are not authorized to update a property",
+     );
+   }
+
+   const isExistProperty = await prisma.properties.findFirst({
+     where: {
+       id: propertyId,
+       usersId: isExistUser.id,
+       isDeleted: false,
+     },
+   });
+
+   if (!isExistProperty) {
+     throw new AppError(
+       httpStatus.NOT_FOUND,
+       "Property not found or you are not the owner",
+     );
+   }
+
+   const result = await prisma.properties.update({
+     where: {
+       id: propertyId,
+     },
+     data: {
+       ...payload,
+     },
+   });
+
+   return result;
+ };
 
 
- 
+
+
  export const PropertiesService = {
-    createProperties
- }
+   createProperties,
+   updateProperties,
+ };

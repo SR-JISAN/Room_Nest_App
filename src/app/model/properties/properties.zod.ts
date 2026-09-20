@@ -63,3 +63,45 @@ export const createPropertyValidationSchema = z.object({
 
   rooms: z.array(roomValidationSchema).min(1, "At least one room is required"),
 });
+
+
+export const updatePropertyValidationSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(3, "Property title must be at least 3 characters")
+    .max(50, "Property title cannot exceed 50 characters")
+    .optional(),
+
+  description: z
+    .string()
+    .trim()
+    .min(20, "Description must be at least 20 characters")
+    .optional(),
+
+  address: z
+    .string()
+    .trim()
+    .min(5, "Address must be at least 5 characters")
+    .optional(),
+
+  area: z
+    .string()
+    .trim()
+    .min(2, "Area is required")
+    .max(100, "Area cannot exceed 100 characters")
+    .optional(),
+
+  city: z
+    .string()
+    .trim()
+    .min(2, "City is required")
+    .max(50, "City cannot exceed 50 characters")
+    .optional(),
+
+  latitude: z.string().trim().min(1, "Latitude is required").optional(),
+
+  longitude: z.string().trim().min(1, "Longitude is required").optional(),
+
+  propertyType: z.enum(PropertyType).optional(),
+});
