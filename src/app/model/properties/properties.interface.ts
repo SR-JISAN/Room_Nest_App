@@ -20,5 +20,6 @@ export interface IProperty {
   longitude: string;
   propertyType: PropertyType;
   rooms: IRooms[];
+  amenities: string[];
 }
 

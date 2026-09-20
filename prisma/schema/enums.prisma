@@ -30,9 +30,9 @@ enum PropertyStatus {
 }
 
 enum RoomType {
-  SINGLE
-  SHEAR
-  MASTER
+  SINGLE_ROOM
+  SHARED_ROOM
+  MASTER_ROOM
 }
 
 enum RoomStatus {

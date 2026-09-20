@@ -37,8 +37,25 @@ import { IProperty } from "./properties.interface";
      );
    };
 
-
    const result = await prisma.$transaction(async (tx) => {
+    const amenities = await tx.amenities.findMany({
+      where: {
+        amenityName: {
+          in: payload.amenities,
+        },
+        isDeleted: false,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (amenities.length !== payload.amenities.length) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "One or more amenities are invalid",
+      );
+    }
      const property = await tx.properties.create({
        data: {
          title: payload.title,
@@ -56,6 +73,16 @@ import { IProperty } from "./properties.interface";
            },
          },
 
+         propertyAmenities: {
+           create: payload.amenities.map((amenityName) => ({
+             amenity: {
+               connect: {
+                 amenityName: amenityName,
+               },
+             },
+           })),
+         },
+
          rooms: {
            create: payload.rooms.map((room) => ({
              title: room.roomTitle,
@@ -69,7 +96,6 @@ import { IProperty } from "./properties.interface";
 
        include: {
          rooms: true,
-         propertyImages: true,
          propertyAmenities: true,
        },
      });
@@ -81,9 +107,9 @@ import { IProperty } from "./properties.interface";
    return result;
  };
 
+
+
  
-
-
  export const PropertiesService = {
     createProperties
  }
