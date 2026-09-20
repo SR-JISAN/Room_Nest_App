@@ -15,8 +15,8 @@ model Properties {
   verified       Boolean        @default(false)
   propertyStatus PropertyStatus @default(PENDING)
 
-  landlordId String
-  landlord   Users  @relation(fields: [landlordId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  usersId String 
+  users   Users  @relation(fields: [usersId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   propertyAmenities PropertyAmenities[]
   propertyImages    PropertyImage[]
@@ -29,7 +29,6 @@ model Properties {
   createdAt DateTime @default(now())
 
   @@index([propertyStatus])
-  @@index([landlordId])
   @@index([city])
   @@index([area])
   @@map("properties")
