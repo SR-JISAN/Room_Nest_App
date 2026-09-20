@@ -34,3 +34,11 @@ export interface IUpdateProperty {
   propertyType?: PropertyType;
 }
 
+export interface IUpdateRoom {
+  title?: string;
+  description?: string;
+  rentAmount?: number;
+  securityDeposit?: number;
+  roomType?: RoomType;
+}
+

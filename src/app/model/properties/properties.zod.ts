@@ -105,3 +105,32 @@ export const updatePropertyValidationSchema = z.object({
 
   propertyType: z.enum(PropertyType).optional(),
 });
+
+
+export const updateRoomValidationSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(3, "Room title must be at least 3 characters")
+    .max(100, "Room title cannot exceed 100 characters")
+    .optional(),
+
+  description: z
+    .string()
+    .trim()
+    .min(10, "Room description must be at least 10 characters")
+    .max(1000, "Room description cannot exceed 1000 characters")
+    .optional(),
+
+  rentAmount: z
+    .number()
+    .positive("Rent amount must be greater than 0")
+    .optional(),
+
+  securityDeposit: z
+    .number()
+    .nonnegative("Security deposit cannot be negative")
+    .optional(),
+
+  roomType: z.enum(RoomType).optional(),
+});

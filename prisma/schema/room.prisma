@@ -19,6 +19,8 @@ model Rooms {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  isDeleted          Boolean      @default(false)
+  deletedAt          DateTime?
 
   @@index([propertyId])
   @@index([roomType, rentAmount, roomStatus])

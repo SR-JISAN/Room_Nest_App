@@ -3,7 +3,7 @@ import { IRequestUser } from "../../middleware/check.auth";
 import httpStatus from "http-status"
 import AppError from "../../utils/appError";
 import { Role } from "../../../generated/prisma/enums";
-import { IProperty, IUpdateProperty } from "./properties.interface";
+import { IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface";
 
  
 
@@ -168,9 +168,90 @@ import { IProperty, IUpdateProperty } from "./properties.interface";
  };
 
 
+ const updateRoom = async (
+   propertyId: string,
+   roomId: string,
+   payload: IUpdateRoom,
+   user: IRequestUser,
+ ) => {
+   const isExistUser = await prisma.users.findUnique({
+     where: {
+       email: user.email,
+     },
+   });
+
+   if (!isExistUser) {
+     throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+   }
+
+   if (!isExistUser.emailVerified) {
+     throw new AppError(httpStatus.BAD_REQUEST, "Your email is not verified");
+   }
+
+   if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       `Your account is ${isExistUser.status}. Contact with authority.`,
+     );
+   }
+
+   if (isExistUser.role === Role.USER) {
+     throw new AppError(
+       httpStatus.UNAUTHORIZED,
+       "You are not authorized to update a room",
+     );
+   }
+
+   // Check property ownership
+   const isExistProperty = await prisma.properties.findFirst({
+     where: {
+       id: propertyId,
+       usersId: isExistUser.id,
+       isDeleted: false,
+     },
+   });
+
+   if (!isExistProperty) {
+     throw new AppError(
+       httpStatus.NOT_FOUND,
+       "Property not found or you are not the owner",
+     );
+   }
+
+   // Check room belongs to this property
+   const isExistRoom = await prisma.rooms.findFirst({
+     where: {
+       id: roomId,
+       propertyId: propertyId,
+       isDeleted: false,
+     },
+   });
+
+   if (!isExistRoom) {
+     throw new AppError(
+       httpStatus.NOT_FOUND,
+       "Room not found in this property",
+     );
+   }
+
+   // Partial update
+   const result = await prisma.rooms.update({
+     where: {
+       id: roomId,
+     },
+     data: {
+       ...payload,
+     },
+   });
+
+   return result;
+ };
+
+
 
 
  export const PropertiesService = {
    createProperties,
    updateProperties,
+   updateRoom,
  };

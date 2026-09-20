@@ -3,7 +3,7 @@ import { PropertyController } from "./properties.controller";
 import { auth } from "../../middleware/check.auth";
 import { Role } from "../../../generated/prisma/enums";
 
-import { createPropertyValidationSchema, updatePropertyValidationSchema } from "./properties.zod";
+import { createPropertyValidationSchema, updatePropertyValidationSchema, updateRoomValidationSchema } from "./properties.zod";
 import { ValidateRequest } from "../../middleware/validate.schema";
 
 
@@ -15,6 +15,12 @@ router.patch(
   ValidateRequest(updatePropertyValidationSchema),
   auth(Role.ADMIN, Role.LANDLORD),
   PropertyController.updateProperties,
+);
+router.patch(
+  "/update-room/:propertyId/:roomId",
+  ValidateRequest(updateRoomValidationSchema),
+  auth(Role.ADMIN, Role.LANDLORD),
+  PropertyController.updateRoom,
 );
 
 export const PropertyRoute = router
