@@ -17,17 +17,14 @@ const createProperties = CatchAsync(async (req: Request, res: Response) => {
   };
   const propertyImageFiles = propertyImages?.property_images || [];
 
-  const roomImageFiles = propertyImages?.rooms_images || [];
-
  const validateData = CreatePropertyZodSchema.parse(data)
 
  const result = await PropertiesService.createProperties(
    validateData,
    propertyImageFiles,
-   roomImageFiles,
    user,
  );
- 
+
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,
@@ -35,6 +32,43 @@ const createProperties = CatchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+
+const uploadRoomImage = CatchAsync(async (req: Request, res: Response) => {
+
+    const propertyId = req.params.propertyId as string;
+    const roomId = req.params.roomId as string;
+  
+  const user = req.user as IRequestUser;
+  const files = req.files as{ rooms_images?: Express.Multer.File[];}
+  
+  
+
+  const roomImageFiles = files.rooms_images || [];
+   if (!roomImageFiles.length) {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       "At least one room image is required",
+     );
+   };
+
+  
+
+  const result = await PropertiesService.uploadRoomImage(
+   propertyId,
+   roomId,
+    roomImageFiles,
+    user,
+  );
+
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.CREATED,
+    message: "Room Image Created Successfully",
+    data: result,
+  });
+});
+
 const updateProperties = CatchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const user = req.user as IRequestUser;
@@ -82,4 +116,5 @@ export const PropertyController = {
   createProperties,
   updateProperties,
   updateRoom,
+  uploadRoomImage,
 };

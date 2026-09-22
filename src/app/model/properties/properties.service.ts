@@ -14,7 +14,7 @@ import { file } from "zod";
  const createProperties = async (
    payload: IProperty,
    propertyImageFiles:Express.Multer.File[],
-   roomImageFiles:Express.Multer.File[],
+   
    user: IRequestUser,
  ) => {
    const isExistUser = await prisma.users.findUnique({
@@ -73,31 +73,6 @@ import { file } from "zod";
    }));
 
 
-//    const roomImageCloudinaryResult = await Promise.all(roomImageFiles.map(async(image)=>{
-//     return   new Promise<UploadApiResponse>((resolve,reject)=>{
-//         cloudinary.uploader.upload_stream({
-//             "resource_type": "auto"
-//         },
-//         async(error,result)=>{
-//             if(error){
-//                 return reject(error)
-//             };
-            
-//             if(!result){
-//                 return reject(
-//                   new AppError(
-//                     httpStatus.BAD_REQUEST,
-//                     "No result returned from Cloudinary",
-//                   ),
-//                 );
-//             };
-
-//             resolve(result)
-//         }
-    
-//     ).end(image.buffer)
-//     })
-//    }));
 
 
    
@@ -331,9 +306,112 @@ import { file } from "zod";
    return result;
  };
 
- const uploadPropertyImage = async ()=>{
+ const uploadRoomImage = async (
+   propertyId:string,
+   roomId:string,
+   roomImageFiles: Express.Multer.File[],
+   user: IRequestUser,
+ ) => {
+   const isExistUser = await prisma.users.findUnique({
+     where: {
+       email: user.email,
+     },
+   });
+   if (!isExistUser) {
+     throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+   }
 
- }
+   if (!isExistUser.emailVerified) {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       "your email is not verified please verified with re-registration",
+     );
+   }
+
+   if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       `your email is ${isExistUser.status}. contact with authority`,
+     );
+   }
+   if (isExistUser.role === Role.USER) {
+     throw new AppError(
+       httpStatus.UNAUTHORIZED,
+       "You are not accessible for this route",
+     );
+   };
+
+      
+
+     const isExistProperty = await prisma.properties.findFirst({
+        where:{
+            id:propertyId,
+            isDeleted:false,
+            usersId:isExistUser.id
+        }
+     });
+     if(!isExistProperty){
+        throw new AppError(httpStatus.NOT_FOUND,"Property Not Found")
+     }
+
+     const isExistRoom = await prisma.rooms.findFirst({
+        where:{
+            id:roomId,
+            propertyId:isExistProperty?.id,
+            isDeleted:false
+        }
+     })
+
+     if (!isExistRoom) {
+       throw new AppError(httpStatus.NOT_FOUND, "Property Not Found");
+     }
+
+     const roomImageCloudinaryResult = await Promise.all(
+       roomImageFiles.map(async (image) => {
+         return new Promise<UploadApiResponse>((resolve, reject) => {
+           cloudinary.uploader
+             .upload_stream(
+               {
+                 resource_type: "auto",
+               },
+               async (error, result) => {
+                 if (error) {
+                   return reject(error);
+                 }
+
+                 if (!result) {
+                   return reject(
+                     new AppError(
+                       httpStatus.BAD_REQUEST,
+                       "No result returned from Cloudinary",
+                     ),
+                   );
+                 }
+
+                 resolve(result);
+               },
+             )
+             .end(image.buffer);
+         });
+       }),
+     );
+
+     await prisma.roomImage.createMany({
+       data: roomImageCloudinaryResult.map((image) => ({
+         roomId: roomId,
+         roomImageURL: image.secure_url,
+         roomImagePublicId : image.public_id
+       })),
+     });
+
+     const result = await prisma.roomImage.findMany({
+       where: {
+         roomId,
+       },
+     });
+
+     return result
+ };
 
 
 
@@ -342,4 +420,5 @@ import { file } from "zod";
    createProperties,
    updateProperties,
    updateRoom,
+   uploadRoomImage,
  };
