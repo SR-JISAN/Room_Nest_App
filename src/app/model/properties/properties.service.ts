@@ -4,10 +4,19 @@ import httpStatus from "http-status"
 import AppError from "../../utils/appError";
 import { Role } from "../../../generated/prisma/enums";
 import { IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface";
+import { UploadApiResponse } from "cloudinary";
+import { cloudinary } from "../../lib/cloudinary";
+import { error } from "console";
+import { file } from "zod";
 
  
 
- const createProperties = async(payload:IProperty,user:IRequestUser)=>{
+ const createProperties = async (
+   payload: IProperty,
+   propertyImageFiles:Express.Multer.File[],
+   roomImageFiles:Express.Multer.File[],
+   user: IRequestUser,
+ ) => {
    const isExistUser = await prisma.users.findUnique({
      where: {
        email: user.email,
@@ -37,25 +46,81 @@ import { IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface"
      );
    };
 
-   const result = await prisma.$transaction(async (tx) => {
-    const amenities = await tx.amenities.findMany({
-      where: {
-        amenityName: {
-          in: payload.amenities,
+   const propertyImageCloudinaryResult = await Promise.all(propertyImageFiles.map(async(image)=>{
+    return   new Promise<UploadApiResponse>((resolve,reject)=>{
+        cloudinary.uploader.upload_stream({
+            "resource_type": "auto"
         },
-        isDeleted: false,
-      },
-      select: {
-        id: true,
-      },
-    });
+        async(error,result)=>{
+            if(error){
+                return reject(error)
+            };
+            
+            if(!result){
+                return reject(
+                  new AppError(
+                    httpStatus.BAD_REQUEST,
+                    "No result returned from Cloudinary",
+                  ),
+                );
+            };
 
-    if (amenities.length !== payload.amenities.length) {
-      throw new AppError(
-        httpStatus.BAD_REQUEST,
-        "One or more amenities are invalid",
-      );
-    }
+            resolve(result)
+        }
+    
+    ).end(image.buffer)
+    })
+   }));
+
+
+//    const roomImageCloudinaryResult = await Promise.all(roomImageFiles.map(async(image)=>{
+//     return   new Promise<UploadApiResponse>((resolve,reject)=>{
+//         cloudinary.uploader.upload_stream({
+//             "resource_type": "auto"
+//         },
+//         async(error,result)=>{
+//             if(error){
+//                 return reject(error)
+//             };
+            
+//             if(!result){
+//                 return reject(
+//                   new AppError(
+//                     httpStatus.BAD_REQUEST,
+//                     "No result returned from Cloudinary",
+//                   ),
+//                 );
+//             };
+
+//             resolve(result)
+//         }
+    
+//     ).end(image.buffer)
+//     })
+//    }));
+
+
+   
+
+   const result = await prisma.$transaction(async (tx) => {
+     const amenities = await tx.amenities.findMany({
+       where: {
+         amenityName: {
+           in: payload.amenities,
+         },
+         isDeleted: false,
+       },
+       select: {
+         id: true,
+       },
+     });
+
+     if (amenities.length !== payload.amenities.length) {
+       throw new AppError(
+         httpStatus.BAD_REQUEST,
+         "One or more amenities are invalid",
+       );
+     };
      const property = await tx.properties.create({
        data: {
          title: payload.title,
@@ -66,6 +131,12 @@ import { IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface"
          latitude: payload.latitude,
          longitude: payload.longitude,
          propertyType: payload.propertyType,
+         propertyImages: {
+           create: propertyImageCloudinaryResult.map((image) => ({
+             propertyImageURL: image.secure_url,
+             propertyImagePublicId: image.public_id,
+           })),
+         },
 
          users: {
            connect: {
@@ -90,19 +161,32 @@ import { IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface"
              rentAmount: room.rentAmount,
              securityDeposit: room.securityDeposit,
              roomType: room.roomType,
+             roomAmenities: {
+               create: payload.amenities.map((amenityName) => ({
+                 amenity: {
+                   connect: {
+                     amenityName: amenityName,
+                   },
+                 },
+               })),
+             },
            })),
          },
        },
 
        include: {
-         rooms: true,
+         rooms: {
+           include: {
+             roomImages: true,
+           },
+         },
          propertyAmenities: true,
+         propertyImages: true,
        },
      });
 
      return property;
    });
-
 
    return result;
  };
@@ -246,6 +330,10 @@ import { IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface"
 
    return result;
  };
+
+ const uploadPropertyImage = async ()=>{
+
+ }
 
 
 

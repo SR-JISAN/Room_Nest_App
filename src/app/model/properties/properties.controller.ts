@@ -5,13 +5,29 @@ import { PropertiesService } from "./properties.service";
 import { SendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
+import { CreatePropertyZodSchema } from "./properties.zod";
 
 
 const createProperties = CatchAsync(async (req: Request, res: Response) => {
-  const payload = req.body;
+  const data = JSON.parse(req.body.data);
   const user = req.user as IRequestUser
+  const propertyImages = req.files as {
+    property_images?: Express.Multer.File[];
+    rooms_images?: Express.Multer.File[];
+  };
+  const propertyImageFiles = propertyImages?.property_images || [];
 
- const result =  await PropertiesService.createProperties(payload,user);
+  const roomImageFiles = propertyImages?.rooms_images || [];
+
+ const validateData = CreatePropertyZodSchema.parse(data)
+
+ const result = await PropertiesService.createProperties(
+   validateData,
+   propertyImageFiles,
+   roomImageFiles,
+   user,
+ );
+ 
   SendResponse(res, {
     success: true,
     statusCode: httpStatus.CREATED,

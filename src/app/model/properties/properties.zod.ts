@@ -1,43 +1,24 @@
 import z from "zod";
 import { PropertyType, RoomType } from "../../../generated/prisma/enums";
 
-
-
-const roomValidationSchema = z.object({
-  roomTitle: z
-    .string()
-    .trim()
-    .min(3, "Room title must be at least 3 characters")
-    .max(100, "Room title cannot exceed 100 characters"),
-
-  roomDescription: z
-    .string()
-    .trim()
-    .min(10, "Room description must be at least 10 characters")
-    .max(1000, "Room description cannot exceed 1000 characters"),
-
-  rentAmount: z.number().positive("Rent amount must be greater than 0"),
-
-  securityDeposit: z
-    .number()
-    .nonnegative("Security deposit cannot be negative"),
-
-  roomType: z.enum(RoomType),
-});
-
-export const createPropertyValidationSchema = z.object({
+export const CreatePropertyZodSchema = z.object({
   title: z
     .string()
     .trim()
     .min(3, "Property title must be at least 3 characters")
-    .max(50, "Property title cannot exceed 50 characters"),
+    .max(100, "Property title cannot exceed 100 characters"),
 
   description: z
     .string()
     .trim()
-    .min(20, "Description must be at least 20 characters"),
+    .min(10, "Property description must be at least 10 characters")
+    .max(2000, "Property description cannot exceed 2000 characters"),
 
-  address: z.string().trim().min(5, "Address must be at least 5 characters"),
+  address: z
+    .string()
+    .trim()
+    .min(5, "Address must be at least 5 characters")
+    .max(200, "Address cannot exceed 200 characters"),
 
   area: z
     .string()
@@ -55,13 +36,46 @@ export const createPropertyValidationSchema = z.object({
 
   longitude: z.string().trim().min(1, "Longitude is required"),
 
-  propertyType: z.enum(PropertyType),
+  propertyType: z.nativeEnum(PropertyType),
 
+  // Property level amenities
   amenities: z
-    .array(z.string())
-    .min(1, "At least one amenity is required"),
+    .array(z.string().trim().min(1))
+    .min(1, "At least one property amenity is required"),
 
-  rooms: z.array(roomValidationSchema).min(1, "At least one room is required"),
+  // Rooms
+  rooms: z
+    .array(
+      z.object({
+        roomTitle: z
+          .string()
+          .trim()
+          .min(2, "Room title must be at least 2 characters")
+          .max(100, "Room title cannot exceed 100 characters"),
+
+        roomDescription: z
+          .string()
+          .trim()
+          .min(5, "Room description must be at least 5 characters")
+          .max(1000, "Room description cannot exceed 1000 characters"),
+
+        rentAmount: z.coerce
+          .number()
+          .positive("Rent amount must be greater than 0"),
+
+        securityDeposit: z.coerce
+          .number()
+          .nonnegative("Security deposit cannot be negative"),
+
+        roomType: z.nativeEnum(RoomType),
+
+        // Room level amenities
+        amenities: z
+          .array(z.string().trim().min(1))
+          .min(1, "At least one room amenity is required"),
+      }),
+    )
+    .min(1, "At least one room is required"),
 });
 
 
