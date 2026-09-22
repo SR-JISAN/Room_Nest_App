@@ -87,7 +87,6 @@ const updateProperties = CatchAsync(async (req: Request, res: Response) => {
 });
 
 
-
 const updateRoom = CatchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const user = req.user as IRequestUser;
@@ -110,6 +109,33 @@ const updateRoom = CatchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const updatePropertyImages = CatchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const propertyId = req.params.propertyId as string;
+  const propertyImageId = req.params.propertyImageId as string;
+
+  if (!propertyId || !propertyImageId) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "Property ID and Room ID are required",
+    );
+  }
+
+  const result = await PropertiesService.updatePropertyImages(
+    propertyId,
+    propertyImageId,
+    req.file?.buffer,
+    user,
+  );
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Room Updated Successfully",
+    data: result,
+  });
+});
+
+
 
 
 export const PropertyController = {
@@ -117,4 +143,5 @@ export const PropertyController = {
   updateProperties,
   updateRoom,
   uploadRoomImage,
+  updatePropertyImages,
 };

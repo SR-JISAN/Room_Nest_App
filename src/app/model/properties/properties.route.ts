@@ -32,10 +32,17 @@ router.patch(
   PropertyController.updateRoom,
 );
 router.post(
-  "/update-room-images/:propertyId/:roomId",
+  "/create-room-images/:propertyId/:roomId",
   upload.fields([{ name: "rooms_images", maxCount: 4 }]),
   auth(Role.ADMIN, Role.LANDLORD),
   PropertyController.uploadRoomImage,
+);
+
+router.patch(
+  "/update-property-images/:propertyId/:propertyImageId",
+  upload.single("property_images"),
+  auth(Role.ADMIN, Role.LANDLORD),
+  PropertyController.updatePropertyImages,
 );
 
 export const PropertyRoute = router

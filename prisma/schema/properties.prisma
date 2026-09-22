@@ -28,8 +28,9 @@ model Properties {
   updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 
-  @@index([propertyStatus])
+  @@index([propertyStatus,title])
   @@index([city])
   @@index([area])
+  @@index([propertyType])
   @@map("properties")
 }

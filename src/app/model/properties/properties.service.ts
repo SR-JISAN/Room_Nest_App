@@ -6,8 +6,6 @@ import { Role } from "../../../generated/prisma/enums";
 import { IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface";
 import { UploadApiResponse } from "cloudinary";
 import { cloudinary } from "../../lib/cloudinary";
-import { error } from "console";
-import { file } from "zod";
 
  
 
@@ -413,6 +411,98 @@ import { file } from "zod";
      return result
  };
 
+ const updatePropertyImages = async (
+   propertyId: string,
+   propertyImageId: string,
+   buffer: Buffer | undefined,
+   user: IRequestUser,
+ ) => {
+   const isExistUser = await prisma.users.findUnique({
+     where: {
+       email: user.email,
+     },
+   });
+   if (!isExistUser) {
+     throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+   }
+
+   if (!isExistUser.emailVerified) {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       "your email is not verified please verified with re-registration",
+     );
+   }
+
+   if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       `your email is ${isExistUser.status}. contact with authority`,
+     );
+   }
+   if (isExistUser.role === Role.USER) {
+     throw new AppError(
+       httpStatus.UNAUTHORIZED,
+       "You are not accessible for this route",
+     );
+   }
+
+   const isExistProperty = await prisma.properties.findFirst({
+     where: {
+       id: propertyId,
+       usersId: isExistUser.id,
+       isDeleted: false,
+     },
+   });
+
+   if (!isExistProperty) {
+     throw new AppError(httpStatus.NOT_FOUND, "Property Doesn't exist.");
+   }
+
+   const isPropertyImageExist = await prisma.propertyImage.findFirst({
+     where: {
+       id: propertyImageId,
+       propertyId: isExistProperty.id,
+       isDeleted: false,
+     },
+   });
+   if (!isPropertyImageExist) {
+     throw new AppError(httpStatus.NOT_FOUND, "Property Doesn't exist.");
+   };
+
+
+   const uploadUpdatedPropertyImage = await  new Promise<UploadApiResponse>((resolve,reject)=>{
+            cloudinary.uploader.upload_stream({
+                "resource_type":"auto"
+            },
+            (error,result)=>{
+                if(error){
+                    reject(error)
+                }
+                if(!result){
+                    throw new AppError(httpStatus.BAD_REQUEST,"Cloudinary Result not found")
+                }
+                resolve(result)
+            }
+        
+        ).end(buffer)
+    })
+   
+
+
+   const result = await prisma.propertyImage.update({
+    where:{id:isPropertyImageExist.id},
+    data:{
+        propertyImageURL:uploadUpdatedPropertyImage.secure_url,
+        propertyImagePublicId: uploadUpdatedPropertyImage.public_id
+    }
+   })
+
+   if(uploadUpdatedPropertyImage && isPropertyImageExist.propertyImagePublicId){
+    await cloudinary.uploader.destroy(isPropertyImageExist.propertyImagePublicId);
+   }
+return result;
+ };
+
 
 
 
@@ -421,4 +511,5 @@ import { file } from "zod";
    updateProperties,
    updateRoom,
    uploadRoomImage,
+   updatePropertyImages,
  };
