@@ -45,4 +45,12 @@ router.patch(
   PropertyController.updatePropertyImages,
 );
 
+
+router.patch(
+  "/update-room-images/:propertyId/:roomId/:roomImageId",
+  upload.single("rooms_images"),
+  auth(Role.ADMIN, Role.LANDLORD),
+  PropertyController.updateRoomImage,
+);
+
 export const PropertyRoute = router

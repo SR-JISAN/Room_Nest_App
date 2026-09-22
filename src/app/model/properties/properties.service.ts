@@ -466,7 +466,7 @@ import { cloudinary } from "../../lib/cloudinary";
      },
    });
    if (!isPropertyImageExist) {
-     throw new AppError(httpStatus.NOT_FOUND, "Property Doesn't exist.");
+     throw new AppError(httpStatus.NOT_FOUND, "Property Image Doesn't exist.");
    };
 
 
@@ -504,6 +504,118 @@ return result;
  };
 
 
+ const updateRoomImage = async (
+   propertyId: string,
+   roomId:string,
+   roomImageId: string,
+   buffer: Buffer | undefined,
+   user: IRequestUser,
+ ) => {
+   const isExistUser = await prisma.users.findUnique({
+     where: {
+       email: user.email,
+     },
+   });
+   if (!isExistUser) {
+     throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+   }
+
+   if (!isExistUser.emailVerified) {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       "your email is not verified please verified with re-registration",
+     );
+   }
+
+   if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       `your email is ${isExistUser.status}. contact with authority`,
+     );
+   }
+   if (isExistUser.role === Role.USER) {
+     throw new AppError(
+       httpStatus.UNAUTHORIZED,
+       "You are not accessible for this route",
+     );
+   }
+
+   const isExistProperty = await prisma.properties.findFirst({
+     where: {
+       id: propertyId,
+       usersId: isExistUser.id,
+       isDeleted: false,
+     },
+   });
+
+   if (!isExistProperty) {
+     throw new AppError(httpStatus.NOT_FOUND, "Property Doesn't exist.");
+   };
+
+   const isExistRoom = await prisma.rooms.findFirst({
+     where: {
+       id: roomId,
+       propertyId:propertyId,
+       isDeleted: false,
+     },
+   });
+
+   if (!isExistRoom) {
+     throw new AppError(httpStatus.NOT_FOUND, "Room Doesn't exist.");
+   };
+
+   const isRoomImageExist = await prisma.roomImage.findFirst({
+     where: {
+       id: roomImageId,
+       roomId: isExistRoom.id,
+       isDeleted: false,
+     },
+   });
+   if (!isRoomImageExist) {
+     throw new AppError(httpStatus.NOT_FOUND, "Room Image Doesn't exist.");
+   }
+
+   const uploadUpdatedRoomImage = await new Promise<UploadApiResponse>(
+     (resolve, reject) => {
+       cloudinary.uploader
+         .upload_stream(
+           {
+             resource_type: "auto",
+           },
+           (error, result) => {
+             if (error) {
+               reject(error);
+             }
+             if (!result) {
+               throw new AppError(
+                 httpStatus.BAD_REQUEST,
+                 "Cloudinary Result not found",
+               );
+             }
+             resolve(result);
+           },
+         )
+         .end(buffer);
+     },
+   );
+
+   const result = await prisma.roomImage.update({
+     where: { id: isRoomImageExist.id },
+     data: {
+       roomImageURL: uploadUpdatedRoomImage.secure_url,
+       roomImagePublicId: uploadUpdatedRoomImage.public_id,
+     },
+   });
+
+   if (uploadUpdatedRoomImage && isRoomImageExist.roomImagePublicId) {
+     await cloudinary.uploader.destroy(
+       isRoomImageExist.roomImagePublicId,
+     );
+   }
+   return result;
+ };
+
+
 
 
  export const PropertiesService = {
@@ -512,4 +624,5 @@ return result;
    updateRoom,
    uploadRoomImage,
    updatePropertyImages,
+   updateRoomImage,
  };
