@@ -8,6 +8,8 @@ model Booking {
   
   roomId String
   room   Rooms @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  payments      Payment?
+
 
   occupantCount Int @default(1)
   startDate DateTime

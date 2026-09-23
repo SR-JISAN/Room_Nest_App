@@ -1,101 +1,128 @@
-import { Role, RoomStatus } from "../../../generated/prisma/enums";
+import { PaymentMethod, PaymentStatus, PaymentType, Role } from "../../../generated/prisma/enums";
+import config from "../../config";
+import { getBkashIdToken } from "../../lib/bkash";
 import { prisma } from "../../lib/prisma";
-import { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
-import httpStatus  from "http-status";
 import { ICreateBooking } from "./booking.interface";
+import httpStatus from "http-status"
 
-const createBooking =async(user:IRequestUser, payload:ICreateBooking)=>{
-     const isUserExist = await prisma.users.findUnique({
-       where: {
-         email:user.email,
-       },
-     });
+const creteBooking = async (payload: ICreateBooking, userId: string) => {
+    const isExistUser = await prisma.users.findUnique({
+      where: {
+        id:userId
+      },
+    });
 
-     if (!isUserExist) {
-       throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
-     }
-     if (!isUserExist.emailVerified) {
-       throw new AppError(
-         httpStatus.BAD_REQUEST,
-         "your email is not verified please verified with re-registration",
-       );
-     }
+    if (!isExistUser) {
+      throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+    }
 
-     if (isUserExist.status === "BLOCKED" || isUserExist.status === "DELETED") {
-       throw new AppError(
-         httpStatus.BAD_REQUEST,
-         `your email is ${isUserExist.status}. contact with authority`,
-       );
-     };
+    if (!isExistUser.emailVerified) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Your email is not verified");
+    }
 
-     if(isUserExist.isDeleted){
-        throw new AppError(
-          httpStatus.BAD_REQUEST,
-          "User is Deleted",
-        );
-     };
-     if(isUserExist.role !== Role.USER){
-         throw new AppError(httpStatus.BAD_REQUEST, "Only user can booked room");
-     };
+    if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Your account is ${isExistUser.status}. Contact with authority.`,
+      );
+    }
 
-     const isExistRoom = await prisma.rooms.findUnique({
+    if (isExistUser.role !== Role.USER) {
+      throw new AppError(
+        httpStatus.UNAUTHORIZED,
+        "You are not authorized to update a room",
+      );
+    };
+
+
+    const isExistRoom = await prisma.rooms.findUnique({
         where:{
             id:payload.roomId
         }
-     });
+    });
 
-     if(!isExistRoom){
+    if(!isExistRoom){
         throw new AppError(httpStatus.NOT_FOUND,"Room Not Found")
-     };
-     if(isExistRoom.isDeleted){
+    }
+
+    if(isExistRoom.isDeleted){
         throw new AppError(httpStatus.BAD_REQUEST,"Room is deleted")
-     }
-     if (
-       isExistRoom.roomStatus === RoomStatus.BOOKED ||
-       isExistRoom.roomStatus === RoomStatus.UNAVAILABLE
-     ) {
-       throw new AppError(httpStatus.BAD_REQUEST, `Room is ${isExistRoom.roomStatus}`);
-     };
+    };
 
-     const availableSlots =
-       isExistRoom.maxRoommates - isExistRoom.currentRoommates;
+    const transactionResult =await prisma.$transaction(async(tx)=>{
 
-     if (payload.occupantCount > availableSlots) {
-       throw new AppError(
-         httpStatus.BAD_REQUEST,
-         `Only ${availableSlots} space(s) available in this room`,
-       );
-     };
+        const createBooking = await tx.booking.create({
+            data:{
+                startDate:payload.startDate,
+                endDate:payload.endDate,
+                userId:isExistUser.id,
+                roomId:isExistRoom.id,
+                occupantCount: payload.occupantCount,
+                securityDeposit: isExistRoom.securityDeposit,
+                rentAmount: isExistRoom.rentAmount,
+                totalAmount: isExistRoom.securityDeposit,
+                note: payload.note
+            }
+        });
 
+        const bkashIdToken = await getBkashIdToken();
 
-     const result = await prisma.booking.create({
-       data: {
-         userId: isUserExist.id,
+        if (!bkashIdToken) {
+          throw new Error("bKash ID token not found");
+        }
 
-         roomId: isExistRoom.id,
+        const bkashCreatePaymentRes = await fetch(
+          `${config.bkash_base_url}/tokenized/checkout/create`,
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              Accept: "application/json",
+              Authorization: bkashIdToken,
+              "X-App-Key": config.bkash_app_key,
+            },
+            body: JSON.stringify({
+              mode: "0011",
+              payerReference: isExistUser?.email,
+              callbackURL: `${config.bkash_callback_url}/booking/book-room/payment/callback`,
+              amount: isExistRoom.securityDeposit,
+              currency: "BDT",
+              intent: "sale",
+              merchantInvoiceNumber: `SECURITY-${createBooking.id}-${Date.now()}`,
+            }),
+          },
+        );
 
-         occupantCount: payload.occupantCount,
+        const bkashCreatePaymentsResult= await bkashCreatePaymentRes.json();
 
-         startDate: payload.startDate,
+        await tx.payment.create({
+          data: {
+            bookingId: createBooking.id,
+            userId: isExistUser.id,
 
-         endDate: payload.endDate,
+            amount: isExistRoom.securityDeposit,
+            currency: "BDT",
 
-         rentAmount: isExistRoom.rentAmount,
+            paymentMethod: PaymentMethod.BKASH,
+            paymentStatus: PaymentStatus.PENDING,
+            paymentType: PaymentType.SECURITY_DEPOSIT,
 
-         securityDeposit: isExistRoom.securityDeposit,
+            transactionId: bkashCreatePaymentsResult.paymentID,
 
-         totalAmount: isExistRoom.securityDeposit,
+            invoiceId: `SECURITY-${createBooking.id}-${Date.now()}`,
 
-         note: payload.note,
+            gatewayResponse: bkashCreatePaymentsResult,
+          },
+        });
+        return bkashCreatePaymentsResult.bkashURL;
+    });
 
-       },
-     });
+    return transactionResult
 
-     return result;
 };
 
 
-export const BookingService ={
-    createBooking
+export const BookingService = {
+    creteBooking
 }

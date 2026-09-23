@@ -1,0 +1,41 @@
+model Payment {
+  id String @id @default(uuid())
+
+  bookingId String @unique
+  booking   Booking @relation(fields: [bookingId],references: [id],onDelete: Cascade)
+
+  userId String
+  user   Users @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  amount Decimal @db.Decimal(10, 2)
+
+  currency String @default("BDT") @db.VarChar(3)
+
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+   paymentType   PaymentType
+
+  transactionId String? @unique
+
+  gatewayTransactionId String? @unique
+
+  invoiceId String? @unique
+
+  gatewayResponse Json?
+
+  paidAt DateTime?
+
+  failedAt DateTime?
+
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([paymentStatus])
+  @@index([paymentMethod])
+  @@index([createdAt])
+
+  @@map("payments")
+}

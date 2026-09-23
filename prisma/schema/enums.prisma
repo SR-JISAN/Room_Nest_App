@@ -47,3 +47,24 @@ enum BookingStatus {
   CANCELLED
   COMPLETED
 }
+
+
+enum PaymentMethod {
+  BKASH
+  STRIPE
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentType {
+  SECURITY_DEPOSIT
+  MONTHLY_RENT
+}

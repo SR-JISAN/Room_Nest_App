@@ -33,3 +33,7 @@ export const CreateBookingZodSchema = z
       path: ["endDate"],
     },
   );
+
+export const PayExistBookingZodSchema = z.object({
+  bookingId: z.string().uuid("Invalid booking ID"),
+});

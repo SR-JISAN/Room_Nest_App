@@ -1,4 +1,4 @@
-import type { Application, Request, Response } from "express";
+import type { Application, NextFunction, Request, Response } from "express";
 import express from "express";
 import cors from "cors";
 import config from "./app/config";
@@ -10,7 +10,9 @@ import { AuthRoute } from "./app/model/auth/auth.route";
 import { UserRouter } from "./app/model/users/user.route";
 import { AmenitiesRouter } from "./app/model/amenities/amenities.route";
 import { PropertyRoute } from "./app/model/properties/properties.route";
+import { getBkashIdToken } from "./app/lib/bkash";
 import { BookingRoute } from "./app/model/booking/booking.route";
+
 
 const app: Application = express();
 
@@ -23,8 +25,28 @@ app.use(
 
 app.use(express.urlencoded({ extended: true }));
 
+// test
+app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const grantIdTokenResult = await getBkashIdToken();
+
+    console.log(grantIdTokenResult);
+    res.status(httpStatus.OK).json({
+      success: true,
+      message: "Test API is Working Fine",
+      data: null,
+    });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
+});
+
 app.use(express.json());
 app.use(cookieParser());
+
+
+
 
 //all api routes 
 
