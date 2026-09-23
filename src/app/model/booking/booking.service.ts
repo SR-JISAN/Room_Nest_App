@@ -420,8 +420,181 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
 };
 
 
+const refundBooking = async (bookingId: string) => {
+  const result = await prisma.$transaction(async (tx) => {
+
+    if (!bookingId) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Please provide booking ID");
+    }
+
+    // 1. Find booking
+    const booking = await tx.booking.findUnique({
+      where: {
+        id: bookingId,
+      },
+      include: {
+        payments: true,
+        room: true,
+      },
+    });
+
+    if (!booking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
+    }
+
+    // 2. Booking status check
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `Booking already ${booking.status.toLowerCase()}`,
+      );
+    }
+
+    // 3. Payment check
+    if (!booking.payments) {
+      throw new AppError(httpStatus.NOT_FOUND, "Payment record not found");
+    }
+
+    const payments = await prisma.payment.findUnique({
+      where: {
+        bookingId: booking.id,
+      },
+    });
+
+    if (!payments) {
+      throw new AppError(httpStatus.NOT_FOUND, "Payment record not found");
+    }
+    if (!payments.paidAt) {
+      throw new AppError(httpStatus.NOT_FOUND, "Payment date not found");
+    }
+
+    // 4. Check 15 days refund policy
+    const refundDeadline = new Date(payments.paidAt);
+    refundDeadline.setDate(refundDeadline.getDate() + 15);
+
+    const currentDate = new Date();
+
+    if (currentDate > refundDeadline) {
+      throw new Error(
+        "Refund period has expired. Refund is only available within 15 days of payment.",
+      );
+    }
+
+    // 5. Get bKash token
+    const bkashIdToken = await getBkashIdToken();
+
+    if (!bkashIdToken) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Failed to get Bkash ID Token",
+      );
+    }
+
+    // 6. Refund amount
+    const refundAmount = Number(payments.amount);
+
+    // 7. bKash refund
+    const bkashRefundRes = await fetch(
+      `${config.bkash_base_url}/tokenized/checkout/payment/refund`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          Accept: "application/json",
+          Authorization: bkashIdToken,
+          "X-App-Key": config.bkash_app_key,
+        },
+        body: JSON.stringify({
+          paymentID: payments.bkashPaymentID,
+          trxID: payments.bkashTrxID,
+          amount: refundAmount.toString(),
+          sku: "Room Booking Cancellation",
+          reason: "User cancelled booking within 15 days",
+        }),
+      },
+    );
+
+    const refundResult = await bkashRefundRes.json();
+
+    // 8. Check refund response
+    if (!bkashRefundRes.ok || !refundResult.refundTrxID) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        refundResult.statusMessage || "bKash refund failed",
+      );
+    }
+
+    // 9. Cancel booking
+    const updatedBooking = await tx.booking.update({
+      where: {
+        id: booking.id,
+      },
+      data: {
+        status: BookingStatus.CANCELLED,
+      },
+    });
+
+    // 10. Update payment
+    const updatedPayment = await tx.payment.update({
+      where: {
+        id: payments.id,
+      },
+      data: {
+        paymentStatus: PaymentStatus.REFUNDED,
+        refundTrxID: refundResult.refundTrxID,
+        refundAmount: refundResult.amount,
+        refundReason: "Room booking cancelled within 15 days",
+        refundAt: refundResult.completedTime,
+        gatewayResponse: refundResult,
+      },
+    });
+
+    // 11. Update room
+    if (booking.roomId) {
+      const room = await tx.rooms.findUnique({
+        where: {
+          id: booking.roomId,
+        },
+      });
+
+      if (!room) {
+        throw new AppError(httpStatus.NOT_FOUND, "Room not found");
+      }
+
+      const currentRoommates = Math.max(0, room.currentRoommates - 1);
+
+      const updatedRoom = await tx.rooms.update({
+        where: {
+          id: room.id,
+        },
+        data: {
+          currentRoommates,
+          roomStatus: RoomStatus.AVAILABLE,
+        },
+      });
+
+      return {
+        updatedBooking,
+        updatedPayment,
+        updatedRoom,
+        refund: refundResult,
+      };
+    }
+
+    return {
+      updatedBooking,
+      updatedPayment,
+      refund: refundResult,
+    };
+  });
+
+  return result;
+};
+
+
 export const BookingService = {
   creteBooking,
   payExistPayments,
   bookingPaymentCallback,
+  refundBooking,
 };

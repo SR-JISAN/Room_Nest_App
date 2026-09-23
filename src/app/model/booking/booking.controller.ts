@@ -49,8 +49,21 @@ const bookingPaymentCallback = CatchAsync(
 );
 
 
+const refundPayments = CatchAsync(async (req: Request, res: Response) => {
+  const bookingId = req.params.bookingId as string;
+
+  const result = await BookingService.refundBooking(bookingId);
+  SendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Appointment Cancelled & Refunded Successfully",
+    data: result,
+  });
+});
+
 export const BookingController = {
   createBooking,
   payExistPayments,
   bookingPaymentCallback,
+  refundPayments,
 };
