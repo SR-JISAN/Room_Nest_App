@@ -40,3 +40,10 @@ enum RoomStatus {
   UNAVAILABLE
   BOOKED
 }
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}

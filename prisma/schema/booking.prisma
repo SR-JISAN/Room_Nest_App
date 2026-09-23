@@ -1,0 +1,41 @@
+model Booking {
+  id String @id @default(uuid())
+
+  
+  userId String
+  user   Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  
+  roomId String
+  room   Rooms @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  
+  startDate DateTime
+  endDate   DateTime
+
+  rentAmount      Decimal @db.Decimal(10, 2)
+  securityDeposit Decimal @db.Decimal(10, 2)
+  totalAmount     Decimal @db.Decimal(10, 2)
+
+  
+  status BookingStatus @default(PENDING)
+
+ 
+  note String?
+
+ 
+  cancelledAt DateTime?
+  cancellationReason String?
+
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([roomId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@index([roomId, status, startDate, endDate])
+
+  @@map("bookings")
+}

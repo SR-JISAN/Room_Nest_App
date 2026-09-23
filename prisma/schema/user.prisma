@@ -17,6 +17,7 @@ model Users {
   updatedAt          DateTime     @updatedAt
   profiles           Profiles?
   properties         Properties[]
+  booking            Booking[]
 
   @@index([id, email, role])
   @@map("users")
