@@ -1,4 +1,4 @@
-import { BookingStatus, PaymentMethod, PaymentStatus, PaymentType, Role } from "../../../generated/prisma/enums";
+import { BookingStatus, PaymentMethod, PaymentStatus, PaymentType, Role, RoomStatus } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
 import { prisma } from "../../lib/prisma";
@@ -50,6 +50,10 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
     if(isExistRoom.isDeleted){
         throw new AppError(httpStatus.BAD_REQUEST,"Room is deleted")
     };
+
+    if(isExistRoom.maxRoommates < payload.occupantCount){
+        throw new AppError(httpStatus.BAD_REQUEST, "Room has maximum roommates. You can't booked the room");
+    }
 
     const transactionResult =await prisma.$transaction(async(tx)=>{
 
@@ -244,7 +248,180 @@ const payExistPayments = async (bookingId: string, user: IRequestUser) => {
 };
 
 
+const bookingPaymentCallback = async (query: Record<string, any>) => {
+  const transactionResult = await prisma.$transaction(async (tx) => {
+    const paymentId = query.paymentID;
+    const paymentStatus = query.status;
+
+    if (!paymentId) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Payment ID not found");
+    }
+
+    if (!paymentStatus) {
+      throw new AppError(httpStatus.BAD_REQUEST, "Payment status not found");
+    }
+
+    // Get bKash ID Token
+    const bkashIdToken = await getBkashIdToken();
+
+    if (!bkashIdToken) {
+      throw new AppError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "bKash ID Token not found",
+      );
+    }
+
+    // Execute bKash payment
+    const paymentExecutedResponse = await fetch(
+      `${config.bkash_base_url}/tokenized/checkout/execute`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: bkashIdToken,
+          "X-App-Key": config.bkash_app_key,
+        },
+        body: JSON.stringify({
+          paymentID: paymentId,
+        }),
+      },
+    );
+
+    const result = await paymentExecutedResponse.json();
+
+    // Find payment
+    const payment = await tx.payment.findUnique({
+      where: {
+        bkashPaymentID: paymentId,
+      },
+    });
+
+    if (!payment) {
+      throw new AppError(httpStatus.NOT_FOUND, "Payment record not found");
+    }
+
+    // =========================
+    // SUCCESS
+    // =========================
+    if (
+      paymentStatus === "success" &&
+      result?.transactionStatus === "Completed"
+    ) {
+      // Update payment
+      await tx.payment.update({
+        where: {
+          bkashPaymentID: paymentId,
+        },
+        data: {
+          paymentStatus: PaymentStatus.PAID,
+          bkashTrxID: result?.trxID,
+          paidAt: new Date(),
+          gatewayResponse: result,
+        },
+      });
+
+
+
+      // Update booking
+      await tx.booking.update({
+        where: {
+          id: payment.bookingId,
+        },
+        data: {
+          status: BookingStatus.CONFIRMED,
+        },
+      });
+
+      const booking = await tx.booking.findUnique({
+        where: {
+          id: payment.bookingId,
+        },
+        select: {
+          roomId: true,
+          occupantCount: true,
+        },
+      });
+
+      if (!booking) {
+        throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
+      }
+
+      // 4. Room → current roommates + occupant count
+      // 5. Room → BOOKED
+      await tx.rooms.update({
+        where: {
+          id: booking.roomId,
+        },
+        data: {
+          currentRoommates: {
+            increment: booking.occupantCount,
+          },
+          roomStatus: RoomStatus.BOOKED,
+        },
+      });
+
+      return {
+        redirectURL: `${config.frontend_url}/dashboard/my-bookings?status=success`,
+      };
+    }
+
+    // =========================
+    // FAILURE
+    // =========================
+    else if (paymentStatus === "failure") {
+      await tx.payment.update({
+        where: {
+          bkashPaymentID: paymentId,
+        },
+        data: {
+          paymentStatus: PaymentStatus.FAILED,
+          failedAt: new Date(),
+          failureReason: result?.statusMessage || "bKash payment failed",
+          gatewayResponse: result,
+        },
+      });
+
+      return {
+        redirectURL: `${config.frontend_url}/dashboard/my-bookings?status=failure`,
+      };
+    }
+
+    // =========================
+    // CANCEL
+    // =========================
+    else if (paymentStatus === "cancel") {
+      await tx.payment.update({
+        where: {
+          bkashPaymentID: paymentId,
+        },
+        data: {
+          paymentStatus: PaymentStatus.CANCELLED,
+          gatewayResponse: result,
+        },
+      });
+
+      return {
+        redirectURL: `${config.frontend_url}/dashboard/my-bookings?status=cancel`,
+      };
+    }
+
+    // =========================
+    // UNKNOWN STATUS
+    // =========================
+    else {
+      return {
+        redirectURL: `${config.frontend_url}/dashboard/my-bookings?error=having-issue-with-payment`,
+      };
+    }
+  });
+
+  return transactionResult;
+};
+
+
 export const BookingService = {
   creteBooking,
   payExistPayments,
+  bookingPaymentCallback,
 };

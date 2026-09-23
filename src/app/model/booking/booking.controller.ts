@@ -39,8 +39,18 @@ const payExistPayments = CatchAsync(async (req: Request, res: Response) => {
 });
 
 
+const bookingPaymentCallback = CatchAsync(
+  async (req: Request, res: Response) => {
+    const { redirectURL } = await BookingService.bookingPaymentCallback(
+      req.query,
+    );
+    res.redirect(redirectURL);
+  },
+);
+
 
 export const BookingController = {
   createBooking,
   payExistPayments,
+  bookingPaymentCallback,
 };

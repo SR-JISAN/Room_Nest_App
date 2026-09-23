@@ -6,6 +6,10 @@ import { BookingController } from "./booking.controller";
 
 const router = Router();
 
+router.get(
+  "/booked-room/payment/callback",
+  BookingController.bookingPaymentCallback,
+);
 
 router.post("/create-booking",auth(Role.USER),BookingController.createBooking)
 router.post("/:bookingId/pay", auth(Role.USER), BookingController.payExistPayments);
