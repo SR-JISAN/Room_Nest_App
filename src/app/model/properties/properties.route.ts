@@ -10,6 +10,11 @@ import { upload } from "../../lib/multer";
 
 const router = Router();
 
+
+router.get("/all-properties",PropertyController.getAllProperties);
+router.get("/:propertyId", PropertyController.getSingleProperty);
+router.get("/:propertyId/:roomId", PropertyController.getSingleRoom);
+
 router.post(
   "/create-properties",
   upload.fields([
@@ -52,5 +57,8 @@ router.patch(
   auth(Role.ADMIN, Role.LANDLORD),
   PropertyController.updateRoomImage,
 );
+
+router.delete("/delete-property/:propertyId",auth(Role.ADMIN,Role.LANDLORD),PropertyController.deleteProperty)
+router.delete("/delete-room/:propertyId/:roomId",auth(Role.ADMIN,Role.LANDLORD),PropertyController.deleteRoom)
 
 export const PropertyRoute = router

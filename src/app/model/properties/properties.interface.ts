@@ -1,4 +1,5 @@
 import { PropertyType, RoomType } from "../../../generated/prisma/enums";
+import { PropertiesWhereInput } from "../../../generated/prisma/models";
 
 
 
@@ -42,3 +43,19 @@ export interface IUpdateRoom {
   roomType?: RoomType;
 }
 
+
+export interface IGetProperties {
+  searchTerm?: string;
+  title?: string;
+
+  page?: string;
+  limit?: string;
+
+  sortBy?: string;
+  sortOrder?: string;
+
+  propertyType?: PropertyType;
+  propertyStatus?: string;
+  propertyAmenities?: string;
+  city?: string;
+}

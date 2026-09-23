@@ -6,7 +6,48 @@ import { SendResponse } from "../../utils/sendResponse";
 import { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
 import { CreatePropertyZodSchema } from "./properties.zod";
+import { IGetProperties } from "./properties.interface";
 
+
+const getAllProperties = CatchAsync(async (req: Request, res: Response) => {
+  const query = req.query as IGetProperties
+
+  const result = await PropertiesService.getAllProperties(query);
+
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "All Properties found Successfully",
+    data: result,
+  });
+});
+
+
+const getSingleProperty = CatchAsync(async (req: Request, res: Response) => {
+  const propertyId = req.params.propertyId as string;
+
+  const result = await PropertiesService.getSingleProperty(propertyId);
+
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Property found Successfully",
+    data: result,
+  });
+});
+const getSingleRoom = CatchAsync(async (req: Request, res: Response) => {
+  const propertyId = req.params.propertyId as string;
+  const roomId= req.params.roomId as string
+
+  const result = await PropertiesService.getSingleRoom(propertyId,roomId);
+
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Room found Successfully",
+    data: result,
+  });
+});
 
 const createProperties = CatchAsync(async (req: Request, res: Response) => {
   const data = JSON.parse(req.body.data);
@@ -165,6 +206,39 @@ const updateRoomImage = CatchAsync(async (req: Request, res: Response) => {
 });
 
 
+const deleteProperty = CatchAsync(async(req:Request,res:Response)=>{
+
+    const userId =req.user?.userId as string
+    const propertyId =req.params.propertyId as string
+
+    const result = await PropertiesService.deleteProperty(userId,propertyId)
+
+SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Property Deleted Successfully",
+    data: result,
+  });
+});
+
+
+
+const deleteRoom = CatchAsync(async (req: Request, res: Response) => {
+  const userId = req.user?.userId as string;
+  const propertyId = req.params.propertyId as string;
+  const roomId =req.params.roomId as string
+
+  const result = await PropertiesService.deleteRoom(userId, propertyId, roomId);
+
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "room Deleted Successfully",
+    data: result,
+  });
+});
+
+
 
 
 export const PropertyController = {
@@ -174,4 +248,9 @@ export const PropertyController = {
   uploadRoomImage,
   updatePropertyImages,
   updateRoomImage,
+  deleteProperty,
+  deleteRoom,
+  getAllProperties,
+  getSingleProperty,
+  getSingleRoom,
 };

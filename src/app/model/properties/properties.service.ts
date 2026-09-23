@@ -2,10 +2,11 @@ import { prisma } from "../../lib/prisma";
 import { IRequestUser } from "../../middleware/check.auth";
 import httpStatus from "http-status"
 import AppError from "../../utils/appError";
-import { Role } from "../../../generated/prisma/enums";
-import { IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface";
+import { PropertyType, Role } from "../../../generated/prisma/enums";
+import { IGetProperties, IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface";
 import { UploadApiResponse } from "cloudinary";
 import { cloudinary } from "../../lib/cloudinary";
+import { PropertiesWhereInput } from "../../../generated/prisma/models";
 
  
 
@@ -616,6 +617,298 @@ return result;
  };
 
 
+ const deleteProperty = async (userId: string, propertyId:string )=>{
+    const isExistUser = await prisma.users.findUnique({
+      where: {
+        id:userId
+      },
+    });
+    if (!isExistUser) {
+      throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+    };
+
+    if (!isExistUser.emailVerified) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "your email is not verified please verified with re-registration",
+      );
+    }
+
+    if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        `your email is ${isExistUser.status}. contact with authority`,
+      );
+    }
+    if (isExistUser.role === Role.USER) {
+      throw new AppError(
+        httpStatus.UNAUTHORIZED,
+        "You are not accessible for this route",
+      );
+    }
+
+
+    const isExistProperty = await prisma.properties.findUnique({
+        where:{
+            id:propertyId
+        }
+    });
+
+    if(!isExistProperty){
+        throw new AppError(httpStatus.NOT_FOUND,"Property not found")
+    };
+
+    if(isExistProperty.isDeleted){
+        throw new AppError(httpStatus.BAD_REQUEST, "Property already deleted");
+    };
+
+    const result = await prisma.properties.delete({
+        where:{
+            id:isExistProperty.id
+        }
+    });
+
+    return result;
+
+ };
+
+
+
+ const deleteRoom = async (userId: string, propertyId: string,roomId:string) => {
+   const isExistUser = await prisma.users.findUnique({
+     where: {
+       id: userId,
+     },
+   });
+   if (!isExistUser) {
+     throw new AppError(httpStatus.NOT_FOUND, "User Not Found");
+   }
+
+   if (!isExistUser.emailVerified) {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       "your email is not verified please verified with re-registration",
+     );
+   }
+
+   if (isExistUser.status === "BLOCKED" || isExistUser.status === "DELETED") {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       `your email is ${isExistUser.status}. contact with authority`,
+     );
+   }
+   if (isExistUser.role === Role.USER) {
+     throw new AppError(
+       httpStatus.UNAUTHORIZED,
+       "You are not accessible for this route",
+     );
+   }
+
+   const isExistProperty = await prisma.properties.findUnique({
+     where: {
+       id: propertyId,
+     },
+   });
+
+   if (!isExistProperty) {
+     throw new AppError(httpStatus.NOT_FOUND, "Property not found");
+   }
+
+   if (isExistProperty.isDeleted) {
+     throw new AppError(httpStatus.BAD_REQUEST, "Property already deleted");
+   };
+   const isExistRoom = await prisma.rooms.findUnique({
+     where: {
+       id: roomId,
+     },
+   });
+
+   if (!isExistRoom) {
+     throw new AppError(httpStatus.NOT_FOUND, "Room not found");
+   }
+
+   if (isExistRoom.isDeleted) {
+     throw new AppError(httpStatus.BAD_REQUEST, "Room already deleted");
+   };
+
+   const result = await prisma.rooms.delete({
+     where: {
+       id: isExistRoom.id,
+     },
+   });
+
+   return result;
+ };
+
+const getAllProperties = async(query:IGetProperties)=>{
+    const limit = query.limit? Number(query.limit): 10;
+    const page = query.page ?Number(query.page):1;
+    const skip = (page-1)*limit;
+    const sortBy = query.sortBy ? query.sortBy : "createdAt";
+    const sortOrder = query.sortOrder? query.sortOrder : "desc";
+    const andConditions : PropertiesWhereInput[]=[];
+
+    //search terms
+
+    if(query.searchTerm){
+        andConditions.push({
+          OR: [
+            {
+              title: {
+                contains: query.searchTerm,
+                mode: "insensitive",
+              },
+            },
+            {
+              address: {
+                contains: query.searchTerm,
+                mode: "insensitive",
+              },
+            },
+            {
+              area: {
+                contains: query.searchTerm,
+                mode: "insensitive",
+              },
+            },
+            {
+              city: {
+                contains: query.searchTerm,
+                mode: "insensitive",
+              },
+            },
+          ],
+        });
+    };
+
+    if(query.title){
+        andConditions.push({
+            title:{
+                contains: query.title as string,
+                mode:"insensitive"
+            }
+        })
+    };
+
+
+    if (query.propertyAmenities) {
+      const amenities = query.propertyAmenities
+        .split(",")
+        .map((item) => item.trim());
+
+      andConditions.push({
+        propertyAmenities: {
+          some: {
+            amenity: {
+              amenityName: {
+                in: amenities,
+              },
+            },
+          },
+        },
+      });
+    };
+
+    if(query.propertyType){
+        andConditions.push({
+            propertyType: query.propertyType as PropertyType
+        })
+    }
+
+   andConditions.push({isDeleted:false})
+
+
+console.log("QUERY:", query);
+console.log("AND CONDITIONS:", JSON.stringify(andConditions, null, 2));
+
+    const result = await prisma.properties.findMany({
+        where:{
+            AND:andConditions.length >0? andConditions:undefined
+        },
+
+        take:limit,
+        skip:skip,
+        orderBy:{[sortBy]:sortOrder},
+
+        include:{
+            rooms:true,
+            propertyImages:true,
+            propertyAmenities:true
+        }
+    })
+
+    const totalCount = await prisma.properties.count({
+        where:{
+            AND:andConditions
+        }
+    })
+
+    return {
+        result,
+        Meta:
+        {
+            page:page,
+            limit:limit, 
+            total:totalCount,
+            totalPages: Math.ceil(totalCount/limit)
+        }
+      }
+};
+
+const getSingleProperty = async(propertyId:string)=>{
+  const isExistProperty =await prisma.properties.findUnique({
+    where:{id:propertyId},
+    include:{
+      propertyAmenities:true,
+      propertyImages:true,
+      rooms:{
+        include:{
+          roomImages:true,
+          roomAmenities:true
+        }
+      }
+    }
+  });
+  if(!isExistProperty){
+    throw new AppError(httpStatus.NOT_FOUND,"Property not found.")
+  };
+  if(isExistProperty.isDeleted){
+    throw new AppError(httpStatus.BAD_REQUEST,"Property already Deleted")
+  };
+
+return isExistProperty
+};
+
+const getSingleRoom = async (propertyId: string,roomId:string) => {
+  const isExistProperty = await prisma.properties.findUnique({
+    where: { id: propertyId },
+  });
+  if (!isExistProperty) {
+    throw new AppError(httpStatus.NOT_FOUND, "Property not found.");
+  }
+  if (isExistProperty.isDeleted) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Property already Deleted");
+  }
+
+  const isRoomExist = await prisma.rooms.findUnique({
+    where: {
+      id: roomId,
+    },
+    include: {
+      roomAmenities: true,
+      roomImages: true,
+    },
+  });
+
+  if (!isRoomExist) {
+    throw new AppError(httpStatus.NOT_FOUND, "Room not found.");
+  };
+  if (isRoomExist.isDeleted) {
+    throw new AppError(httpStatus.BAD_REQUEST, "Room already Deleted");
+  };
+  return isRoomExist;
+};
+
 
 
  export const PropertiesService = {
@@ -625,4 +918,9 @@ return result;
    uploadRoomImage,
    updatePropertyImages,
    updateRoomImage,
+   deleteProperty,
+   deleteRoom,
+   getAllProperties,
+   getSingleProperty,
+   getSingleRoom,
  };
