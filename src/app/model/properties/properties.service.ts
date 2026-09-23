@@ -72,10 +72,6 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
    }));
 
 
-
-
-   
-
    const result = await prisma.$transaction(async (tx) => {
      const amenities = await tx.amenities.findMany({
        where: {
@@ -135,6 +131,7 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
              rentAmount: room.rentAmount,
              securityDeposit: room.securityDeposit,
              roomType: room.roomType,
+             maxRoommates:room.maxRoommates,
              roomAmenities: {
                create: payload.amenities.map((amenityName) => ({
                  amenity: {

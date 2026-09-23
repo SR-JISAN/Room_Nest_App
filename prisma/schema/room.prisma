@@ -5,6 +5,9 @@ model Rooms {
   description String
 
   roomType RoomType
+  
+  currentRoommates Int @default(0)
+  maxRoommates Int @default(1)
 
   rentAmount      Decimal @db.Decimal(10, 2)
   securityDeposit Decimal @db.Decimal(10, 2)

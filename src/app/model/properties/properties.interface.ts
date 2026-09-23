@@ -9,6 +9,7 @@ export interface IRooms {
   rentAmount: number;
   securityDeposit: number;
   roomType: RoomType;
+  maxRoommates?: number;
 }
 
 export interface IProperty {
@@ -41,6 +42,7 @@ export interface IUpdateRoom {
   rentAmount?: number;
   securityDeposit?: number;
   roomType?: RoomType;
+  maxRoommates?: number;
 }
 
 

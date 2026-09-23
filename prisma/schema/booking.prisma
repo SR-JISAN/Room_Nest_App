@@ -9,9 +9,9 @@ model Booking {
   roomId String
   room   Rooms @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
-  
+  occupantCount Int @default(1)
   startDate DateTime
-  endDate   DateTime
+  endDate   DateTime?
 
   rentAmount      Decimal @db.Decimal(10, 2)
   securityDeposit Decimal @db.Decimal(10, 2)

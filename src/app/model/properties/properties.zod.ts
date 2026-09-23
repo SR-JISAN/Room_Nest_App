@@ -68,6 +68,7 @@ export const CreatePropertyZodSchema = z.object({
           .nonnegative("Security deposit cannot be negative"),
 
         roomType: z.nativeEnum(RoomType),
+        maxRoommates:z.number("you have to give minimum one max roommate").int().min(1).max(5),
 
         // Room level amenities
         amenities: z
@@ -147,4 +148,9 @@ export const updateRoomValidationSchema = z.object({
     .optional(),
 
   roomType: z.enum(RoomType).optional(),
+  maxRoommates: z
+    .number("you have to give minimum one max roommate")
+    .int()
+    .min(1)
+    .max(5).optional(),
 });

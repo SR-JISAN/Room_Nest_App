@@ -10,6 +10,7 @@ import { AuthRoute } from "./app/model/auth/auth.route";
 import { UserRouter } from "./app/model/users/user.route";
 import { AmenitiesRouter } from "./app/model/amenities/amenities.route";
 import { PropertyRoute } from "./app/model/properties/properties.route";
+import { BookingRoute } from "./app/model/booking/booking.route";
 
 const app: Application = express();
 
@@ -33,7 +34,7 @@ app.use("/api/users", UserRouter);
 app.use("/api/amenities",AmenitiesRouter);
 app.use("/api/properties",PropertyRoute);
 
-
+app.use("/api/booking",BookingRoute);
 
 
 
