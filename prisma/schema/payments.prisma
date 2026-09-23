@@ -1,7 +1,7 @@
 model Payment {
   id String @id @default(uuid())
 
-  bookingId String @unique
+  bookingId String 
   booking   Booking @relation(fields: [bookingId],references: [id],onDelete: Cascade)
 
   userId String
@@ -13,20 +13,18 @@ model Payment {
 
   paymentMethod PaymentMethod
   paymentStatus PaymentStatus @default(PENDING)
-   paymentType   PaymentType
-
-  transactionId String? @unique
-
-  gatewayTransactionId String? @unique
-
-  invoiceId String? @unique
-
+  paymentType   PaymentType
+  merchantInvoiceNumber String         @unique
+  bkashPaymentID        String?        @unique
+  bkashTrxID            String?        @unique
+  payerReference        String?
   gatewayResponse Json?
-
   paidAt DateTime?
-
+  refundTrxID           String?        @unique
+  refundAmount          Decimal?       @db.Decimal(10, 2)
+  refundAt              DateTime?
+  refundReason          String?
   failedAt DateTime?
-
   failureReason String?
 
   createdAt DateTime @default(now())
@@ -36,6 +34,7 @@ model Payment {
   @@index([paymentStatus])
   @@index([paymentMethod])
   @@index([createdAt])
+  @@index([bookingId])
 
   @@map("payments")
 }

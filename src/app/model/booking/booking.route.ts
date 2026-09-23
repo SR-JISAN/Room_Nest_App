@@ -8,7 +8,7 @@ const router = Router();
 
 
 router.post("/create-booking",auth(Role.USER),BookingController.createBooking)
-
+router.post("/:bookingId/pay", auth(Role.USER), BookingController.payExistPayments);
 
 
 export const BookingRoute = router;
