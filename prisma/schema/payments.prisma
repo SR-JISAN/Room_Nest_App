@@ -7,8 +7,8 @@ model Payment {
   userId String
   user   Users @relation(fields: [userId],references: [id],onDelete: Cascade,onUpdate: Cascade)
 
-  subBookingId String
-  subBooking SubRoomBooking @relation(fields: [subBookingId],references: [id],onDelete: Cascade,onUpdate: Cascade)
+  subBookingId String?
+  subBooking SubRoomBooking? @relation(fields: [subBookingId],references: [id],onDelete: Cascade,onUpdate: Cascade)
 
   amount Decimal @db.Decimal(10, 2)
 

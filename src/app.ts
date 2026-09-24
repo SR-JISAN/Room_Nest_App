@@ -12,6 +12,7 @@ import { AmenitiesRouter } from "./app/model/amenities/amenities.route";
 import { PropertyRoute } from "./app/model/properties/properties.route";
 import { getBkashIdToken } from "./app/lib/bkash";
 import { BookingRoute } from "./app/model/booking/booking.route";
+import { PaymentRoutes } from "./app/model/payments/payments.route";
 
 
 const app: Application = express();
@@ -26,21 +27,21 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 
 // test
-app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const grantIdTokenResult = await getBkashIdToken();
+// app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
+//   try {
+//     const grantIdTokenResult = await getBkashIdToken();
 
-    console.log(grantIdTokenResult);
-    res.status(httpStatus.OK).json({
-      success: true,
-      message: "Test API is Working Fine",
-      data: null,
-    });
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
+//     console.log(grantIdTokenResult);
+//     res.status(httpStatus.OK).json({
+//       success: true,
+//       message: "Test API is Working Fine",
+//       data: null,
+//     });
+//   } catch (error) {
+//     console.log(error);
+//     next(error);
+//   }
+// });
 
 app.use(express.json());
 app.use(cookieParser());
@@ -57,6 +58,7 @@ app.use("/api/amenities",AmenitiesRouter);
 app.use("/api/properties",PropertyRoute);
 
 app.use("/api/booking",BookingRoute);
+app.use("/api/payments",PaymentRoutes);
 
 
 

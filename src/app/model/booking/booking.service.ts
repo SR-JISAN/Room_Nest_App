@@ -72,6 +72,7 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
 
         const createBooking = await tx.booking.create({
           data: {
+
             startDate: payload.startDate,
             endDate: payload.endDate,
             userId: isExistUser.id,
@@ -88,7 +89,7 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
           data: {
             bookingId: createBooking.id,
             userId: isExistUser.id,
-
+            subBookingId:null,
             amount: isExistRoom.securityDeposit,
             currency: "BDT",
 
@@ -477,7 +478,7 @@ const refundBooking = async (bookingId: string) => {
       throw new AppError(httpStatus.NOT_FOUND, "Payment record not found");
     }
 
-    const payments = await prisma.payment.findUnique({
+    const payments = await prisma.payment.findFirst({
       where: {
         bookingId: booking.id,
       },
