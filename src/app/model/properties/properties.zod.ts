@@ -62,13 +62,20 @@ export const CreatePropertyZodSchema = z.object({
         rentAmount: z.coerce
           .number()
           .positive("Rent amount must be greater than 0"),
+        subRentAmount: z.coerce
+          .number()
+          .positive("Rent amount must be greater than 0"),
 
         securityDeposit: z.coerce
           .number()
           .nonnegative("Security deposit cannot be negative"),
 
         roomType: z.nativeEnum(RoomType),
-        maxRoommates:z.number("you have to give minimum one max roommate").int().min(1).max(5),
+        maxRoommates: z
+          .number("you have to give minimum one max roommate")
+          .int()
+          .min(1)
+          .max(5),
 
         // Room level amenities
         amenities: z
@@ -141,6 +148,7 @@ export const updateRoomValidationSchema = z.object({
     .number()
     .positive("Rent amount must be greater than 0")
     .optional(),
+  subRentAmount: z.coerce.number().positive("Rent amount must be greater than 0"),
 
   securityDeposit: z
     .number()
@@ -152,5 +160,6 @@ export const updateRoomValidationSchema = z.object({
     .number("you have to give minimum one max roommate")
     .int()
     .min(1)
-    .max(5).optional(),
+    .max(5)
+    .optional(),
 });

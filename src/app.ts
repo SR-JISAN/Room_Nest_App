@@ -13,6 +13,8 @@ import { PropertyRoute } from "./app/model/properties/properties.route";
 import { getBkashIdToken } from "./app/lib/bkash";
 import { BookingRoute } from "./app/model/booking/booking.route";
 import { PaymentRoutes } from "./app/model/payments/payments.route";
+import { SubBookingRoute } from "./app/model/subBooking/sub.route";
+
 
 
 const app: Application = express();
@@ -60,6 +62,7 @@ app.use("/api/properties",PropertyRoute);
 app.use("/api/booking",BookingRoute);
 app.use("/api/payments",PaymentRoutes);
 
+app.use("/api/sub/booking",SubBookingRoute);
 
 
 

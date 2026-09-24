@@ -10,6 +10,7 @@ export interface IRooms {
   securityDeposit: number;
   roomType: RoomType;
   maxRoommates?: number;
+  subRentAmount?:number;
 }
 
 export interface IProperty {

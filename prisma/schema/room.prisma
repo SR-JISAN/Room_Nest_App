@@ -10,6 +10,7 @@ model Rooms {
   maxRoommates Int @default(1)
 
   rentAmount      Decimal @db.Decimal(10, 2)
+  subRentAmount      Decimal? @db.Decimal(10, 2)
   securityDeposit Decimal @db.Decimal(10, 2)
 
   roomStatus RoomStatus @default(AVAILABLE)

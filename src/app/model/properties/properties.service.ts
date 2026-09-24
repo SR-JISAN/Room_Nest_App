@@ -132,6 +132,7 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
              securityDeposit: room.securityDeposit,
              roomType: room.roomType,
              maxRoommates:room.maxRoommates,
+             subRentAmount:room.subRentAmount,
              roomAmenities: {
                create: payload.amenities.map((amenityName) => ({
                  amenity: {

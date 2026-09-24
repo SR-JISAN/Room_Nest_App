@@ -18,9 +18,9 @@ model SubRoomBooking {
     occupantCount Int @default(1)
     startDate DateTime
     endDate   DateTime?
-    rentAmount      Decimal @db.Decimal(10, 2)
-    securityDeposit Decimal @db.Decimal(10, 2)
-    totalAmount     Decimal @db.Decimal(10, 2)
+    subRentAmount      Decimal? @db.Decimal(10, 2)
+   
+
 
 
   createdAt DateTime @default(now())
@@ -30,5 +30,5 @@ model SubRoomBooking {
 @@index([gender])
 @@index([roomId, status])
 @@index([roomId, startDate, endDate])
-@@map("subBooking")
+@@map("subRoomBooking")
 }
