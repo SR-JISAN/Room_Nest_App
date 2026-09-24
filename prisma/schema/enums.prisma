@@ -68,3 +68,15 @@ enum PaymentType {
   SECURITY_DEPOSIT
   MONTHLY_RENT
 }
+
+
+enum Gender {
+  MALE
+  FEMALE 
+}
+enum SubBookingStatus {
+  ACCEPTED
+  PENDING
+  REJECTED
+  CANCELLED
+}

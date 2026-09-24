@@ -1,3 +1,5 @@
+import { PaymentStatus } from "../../../generated/prisma/enums";
+
 export interface ICreateBooking {
   roomId: string;
   occupantCount: number;
@@ -5,3 +7,5 @@ export interface ICreateBooking {
   endDate?: Date;
   note?: string;
 }
+
+

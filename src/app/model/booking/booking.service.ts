@@ -1,11 +1,16 @@
+import path from "path";
 import { BookingStatus, PaymentMethod, PaymentStatus, PaymentType, Role, RoomStatus } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
+import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
 import { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
 import { ICreateBooking } from "./booking.interface";
 import httpStatus from "http-status"
+import PDFDocument from "pdfkit";
+import ejs from "ejs"
+import generateBookingInvoice from "../../utils/pdf";
 
 const creteBooking = async (payload: ICreateBooking, userId: string) => {
     const isExistUser = await prisma.users.findUnique({
@@ -51,8 +56,16 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
         throw new AppError(httpStatus.BAD_REQUEST,"Room is deleted")
     };
 
-    if(isExistRoom.maxRoommates < payload.occupantCount){
-        throw new AppError(httpStatus.BAD_REQUEST, "Room has maximum roommates. You can't booked the room");
+  
+    if (
+      payload.occupantCount > isExistRoom.maxRoommates ||
+      isExistRoom.currentRoommates + payload.occupantCount >
+        isExistRoom.maxRoommates
+    ) {
+      throw new AppError(
+        httpStatus.BAD_REQUEST,
+        "Room capacity exceeded. You can't book this room.",
+      );
     }
 
     const transactionResult =await prisma.$transaction(async(tx)=>{
@@ -68,7 +81,7 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
             rentAmount: isExistRoom.rentAmount,
             totalAmount: isExistRoom.securityDeposit,
             note: payload.note,
-          },
+          }
         });
 
         await tx.payment.create({
@@ -88,15 +101,16 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
             payerReference: isExistUser.email,
           },
         });
+
+       
+
+
         return createBooking;
     });
 
     return transactionResult
 
 };
-
-
-
 
 
 const payExistPayments = async (bookingId: string, user: IRequestUser) => {
@@ -131,6 +145,9 @@ const payExistPayments = async (bookingId: string, user: IRequestUser) => {
     where: {
       id: bookingId,
     },
+    include:{
+        room:true
+    }
   });
 
   if (!findBooking) {
@@ -238,6 +255,8 @@ const payExistPayments = async (bookingId: string, user: IRequestUser) => {
       payerReference: isExistUser.email,
     },
   });
+
+  
 
   return {
     paymentId: updatedPayment.id,
@@ -418,6 +437,9 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
 
   return transactionResult;
 };
+
+
+
 
 
 const refundBooking = async (bookingId: string) => {

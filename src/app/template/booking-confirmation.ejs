@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Room Booking Invoice</title>
+</head>
+
+<body style="font-family: Arial, sans-serif; background:#f5f5f5; padding:30px;">
+
+  <div style="max-width:600px; margin:auto; background:white; padding:30px;">
+
+    <h2>Room Nest</h2>
+
+    <h3>Your Room Booking Invoice</h3>
+
+    <p>Hello <%= name %>,</p>
+
+    <p>Your room booking has been confirmed successfully.</p>
+
+    <table style="width:100%; border-collapse:collapse;">
+      <tr>
+        <td><strong>Booking ID</strong></td>
+        <td><%= bookingId %></td>
+      </tr>
+
+      <tr>
+        <td><strong>Room</strong></td>
+        <td><%= roomName %></td>
+      </tr>
+
+      <tr>
+        <td><strong>Payment Status</strong></td>
+        <td><%= paymentStatus %></td>
+      </tr>
+
+      <tr>
+        <td><strong>Transaction ID</strong></td>
+        <td><%= transactionId %></td>
+      </tr>
+
+      <tr>
+        <td><strong>Total Amount</strong></td>
+        <td>৳ <%= amount %></td>
+      </tr>
+    </table>
+
+    <p>Thank you for choosing Room Nest.</p>
+
+  </div>
+
+</body>
+</html>
