@@ -20,6 +20,7 @@ model Users {
   booking            Booking[]
   payments           Payment[]
   subBooking         SubRoomBooking[]
+  reviews            Reviews[]
 
   @@index([id, email, role])
   @@map("users")

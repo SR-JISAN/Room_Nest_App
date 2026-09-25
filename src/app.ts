@@ -14,6 +14,8 @@ import { getBkashIdToken } from "./app/lib/bkash";
 import { BookingRoute } from "./app/model/booking/booking.route";
 import { PaymentRoutes } from "./app/model/payments/payments.route";
 import { SubBookingRoute } from "./app/model/subBooking/sub.route";
+import { ReviewRoute } from "./app/model/reviews/reviews.route";
+import { DashboardRoutes } from "./app/model/dashboard/admin.dashboard/admin.dashboard.route";
 
 
 
@@ -63,6 +65,11 @@ app.use("/api/booking",BookingRoute);
 app.use("/api/payments",PaymentRoutes);
 
 app.use("/api/sub/booking",SubBookingRoute);
+
+app.use("/api/dashboard",DashboardRoutes)
+
+
+app.use("/api/reviews",ReviewRoute);
 
 
 

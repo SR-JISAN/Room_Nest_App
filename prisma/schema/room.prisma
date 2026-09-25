@@ -22,6 +22,7 @@ model Rooms {
   roomAmenities RoomAmenities[]
   booking       Booking[]
   subBooking   SubRoomBooking[]
+  reviews      Reviews[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
