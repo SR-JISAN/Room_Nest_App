@@ -346,7 +346,7 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
       // Update booking
       await tx.booking.update({
         where: {
-          id: payment.bookingId,
+          id: payment.bookingId!,
         },
         data: {
           status: BookingStatus.CONFIRMED,
@@ -355,7 +355,7 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
 
       const booking = await tx.booking.findUnique({
         where: {
-          id: payment.bookingId,
+          id: payment.bookingId!,
         },
         select: {
           roomId: true,

@@ -67,6 +67,7 @@ enum PaymentStatus {
 enum PaymentType {
   SECURITY_DEPOSIT
   MONTHLY_RENT
+  SUB_ROOM_RENT
 }
 
 
@@ -79,4 +80,5 @@ enum SubBookingStatus {
   PENDING
   REJECTED
   CANCELLED
+  CONFIRMED
 }
