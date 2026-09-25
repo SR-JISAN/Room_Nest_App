@@ -457,24 +457,12 @@ const getRoommatesRequest = async (userId: string) => {
     );
   }
 
-  if (isExistSubUser.role !== Role.USER) {
+  if (isExistSubUser.role === Role.LANDLORD) {
     throw new AppError(httpStatus.UNAUTHORIZED, "you are not authorized");
   }
 
 
   const bookings = await prisma.booking.findMany({
-    where: {
-      userId: userId,
-
-      status: BookingStatus.CONFIRMED,
-
-      payments: {
-        some: {
-          paymentStatus: PaymentStatus.PAID,
-        },
-      },
-    },
-
     include: {
       room: {
         include: {
@@ -482,18 +470,11 @@ const getRoommatesRequest = async (userId: string) => {
         },
       },
 
-      payments: {
-        where: {
-          paymentStatus: PaymentStatus.PAID,
-        },
-      },
+      payments: true
     },
   });
 
- 
-  if (bookings.length === 0) {
-    throw new AppError(httpStatus.NOT_FOUND, "you don't have any paid room");
-  }
+
 
   const result = bookings.map((booking) => ({
     bookingId: booking.id,
@@ -505,6 +486,147 @@ const getRoommatesRequest = async (userId: string) => {
 
   return result;
 };
+
+
+const getSingleRoommatesRequest = async(userId:string, subBookingId:string )=>{
+
+
+   const isExistSubUser = await prisma.users.findUnique({
+     where: {
+       id: userId,
+     },
+   });
+
+   if (!isExistSubUser) {
+     throw new AppError(httpStatus.NOT_FOUND, "sub user not found");
+   }
+
+   if (isExistSubUser.isDeleted) {
+     throw new AppError(httpStatus.BAD_REQUEST, "sub user is deleted");
+   }
+
+   if (!isExistSubUser.emailVerified) {
+     throw new AppError(httpStatus.BAD_REQUEST, "sub user is not verified");
+   }
+
+   if (isExistSubUser.status !== UserStatus.ACTIVE) {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       `sub user is ${isExistSubUser.status}`,
+     );
+   }
+
+    const isExistSubBooking = await prisma.subRoomBooking.findUnique({
+      where: {
+        id: subBookingId,
+      },
+    });
+
+    if (!isExistSubBooking) {
+      throw new AppError(httpStatus.NOT_FOUND, "Sub Booking not found");
+    }
+
+   if (isExistSubUser.role === Role.USER) {
+
+    if (isExistSubBooking.userId !== isExistSubUser.id) {
+      throw new AppError(httpStatus.NOT_FOUND, "You can not get this booking");
+    }
+     const subBooking =await prisma.subRoomBooking.findUnique({
+      where:{
+        id:subBookingId,
+        userId:isExistSubUser.id
+      }
+     })
+     return subBooking
+   }
+
+   const subBooking = await prisma.subRoomBooking.findUnique({
+     where: {
+       id: subBookingId,
+     },
+   });
+   return subBooking;
+
+
+};
+
+
+const deleteRoommatesRequest = async(userId:string, subBookingId:string )=>{
+
+
+   const isExistSubUser = await prisma.users.findUnique({
+     where: {
+       id: userId,
+     },
+   });
+
+   if (!isExistSubUser) {
+     throw new AppError(httpStatus.NOT_FOUND, "sub user not found");
+   }
+
+   if (isExistSubUser.isDeleted) {
+     throw new AppError(httpStatus.BAD_REQUEST, "sub user is deleted");
+   }
+
+   if (!isExistSubUser.emailVerified) {
+     throw new AppError(httpStatus.BAD_REQUEST, "sub user is not verified");
+   }
+
+   if (isExistSubUser.status !== UserStatus.ACTIVE) {
+     throw new AppError(
+       httpStatus.BAD_REQUEST,
+       `sub user is ${isExistSubUser.status}`,
+     );
+   }
+
+
+   const isExistSubBooking = await prisma.subRoomBooking.findUnique({
+     where: {
+       id: subBookingId,
+     },
+   });
+
+   if(!isExistSubBooking){
+    throw new AppError(httpStatus.NOT_FOUND,"Sub Booking not found")
+   }
+   if (
+     isExistSubBooking.status === SubBookingStatus.ACCEPTED ||
+     isExistSubBooking.status === SubBookingStatus.CONFIRMED
+   ){
+    throw new AppError(httpStatus.BAD_REQUEST, `Booking Is ${isExistSubBooking.status}`);
+   };
+
+
+     if (isExistSubUser.role === Role.USER) {
+
+      if(isExistSubBooking.userId !== isExistSubUser.id){
+        throw new AppError(httpStatus.NOT_FOUND, "You can not delete");
+      }
+       const subBooking = await prisma.subRoomBooking.delete({
+         where: {
+           id: isExistSubBooking.id,
+           userId: isExistSubUser.id,
+         },
+       });
+       return subBooking;
+     }
+   
+
+   const subBooking = await prisma.subRoomBooking.delete({
+     where: {
+       id: isExistSubBooking.id,
+     },
+   });
+   return subBooking;
+
+
+}
+
+
+
+
+
+
 
 
 const getMyRequest = async (userId: string) => {
@@ -954,5 +1076,7 @@ export const SubRoomBookingService = {
   subBookingPaymentCallback,
   cancelSubRoomBooking,
   getMyRequest,
+  getSingleRoommatesRequest,
+  deleteRoommatesRequest,
 };
 

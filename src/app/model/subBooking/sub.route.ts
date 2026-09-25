@@ -25,7 +25,17 @@ router.get(
   SubRoomBookingController.subBookingPaymentCallback,
 );
 
-router.get("/get-request",auth(Role.USER),SubRoomBookingController.getRoommatesRequest)
+router.get(
+  "/get-request",
+  auth(Role.USER, Role.ADMIN),
+  SubRoomBookingController.getRoommatesRequest,
+);
+
+router.get("/single-sub-booking/:subBookingId",auth(Role.ADMIN,Role.USER),SubRoomBookingController.getSingleRoommatesRequest);
+
+
+router.delete("/delete-booking/:subBookingId",auth(Role.ADMIN,Role.USER),SubRoomBookingController.deleteRoommatesRequest);
+
 router.get("/get-my-request",auth(Role.USER),SubRoomBookingController.getMyRequest)
 
 

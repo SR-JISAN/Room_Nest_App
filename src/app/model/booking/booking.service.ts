@@ -1,5 +1,5 @@
 import path from "path";
-import { BookingStatus, PaymentMethod, PaymentStatus, PaymentType, Role, RoomStatus } from "../../../generated/prisma/enums";
+import { BookingStatus, PaymentMethod, PaymentStatus, PaymentType, Role, RoomStatus, UserStatus } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
 import { transporter } from "../../lib/nodemailer";
@@ -8,9 +8,7 @@ import { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
 import { ICreateBooking } from "./booking.interface";
 import httpStatus from "http-status"
-import PDFDocument from "pdfkit";
-import ejs from "ejs"
-import generateBookingInvoice from "../../utils/pdf";
+
 
 const creteBooking = async (payload: ICreateBooking, userId: string) => {
     const isExistUser = await prisma.users.findUnique({
@@ -112,6 +110,139 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
     return transactionResult
 
 };
+
+const getBooking = async (userId: string) => {
+  const isExistUser = await prisma.users.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!isExistUser) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (isExistUser.isDeleted) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
+  }
+
+  if (!isExistUser.emailVerified) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is not verified");
+  }
+
+  if (isExistUser.status !== UserStatus.ACTIVE) {
+    throw new AppError(httpStatus.BAD_REQUEST, `User is ${isExistUser.status}`);
+  };
+  if(isExistUser.role === Role.LANDLORD){
+    const property = await prisma.properties.findMany({
+      where:{
+        usersId:isExistUser.id
+      }
+    })
+
+    if(!property){
+      throw new AppError(
+        httpStatus.NOT_FOUND,
+        `property not found`,
+      );
+    };
+
+    const rooms = await prisma.rooms.findMany({
+      where: {
+        propertyId: {
+          in: property.map((item) => item.id),
+        },
+      }
+    });
+    const booking = await prisma.booking.findMany({
+      where: {
+        roomId: {
+          in: rooms.map((item) => item.id),
+        },
+      }
+    });
+
+    return booking;
+    
+  }
+
+  
+
+
+
+  if(isExistUser.role === Role.USER){
+    const bookings = await prisma.booking.findMany({
+      where: {
+        userId: isExistUser.id,
+      },
+
+      include: {
+        room: {
+          include: {
+            property: true,
+          },
+        },
+        payments: true
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+    return bookings
+  };
+  
+
+  const bookings = await prisma.booking.findMany({
+    include: {
+      room: {
+        include: {
+          property: true,
+        },
+      },
+      payments: true,
+      user: true,
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+
+  return bookings;
+};
+
+const getSingleBooking = async (userId:string,bookingId:string)=>{
+  const isExistUser = await prisma.users.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!isExistUser) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (isExistUser.isDeleted) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
+  }
+
+  if (!isExistUser.emailVerified) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is not verified");
+  }
+
+  if (isExistUser.status !== UserStatus.ACTIVE) {
+    throw new AppError(httpStatus.BAD_REQUEST, `User is ${isExistUser.status}`);
+  }
+  if (isExistUser.role === Role.LANDLORD) {
+    throw new AppError(httpStatus.UNAUTHORIZED, "You cant not accessed it");
+  }
+
+
+
+}
+
 
 
 const payExistPayments = async (bookingId: string, user: IRequestUser) => {
@@ -620,4 +751,5 @@ export const BookingService = {
   payExistPayments,
   bookingPaymentCallback,
   refundBooking,
+  getBooking,
 };

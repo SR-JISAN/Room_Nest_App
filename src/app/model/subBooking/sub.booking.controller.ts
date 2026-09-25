@@ -32,11 +32,48 @@ const getRoommatesRequest = CatchAsync(
     SendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
+      message: "All Roommate requests retrieved successfully",
+      data: result,
+    });
+  },
+);
+const getSingleRoommatesRequest = CatchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as IRequestUser;
+    const userId = user.userId as string;
+    const subBookingId = req.params.subBookingId as string; 
+
+    const result = await SubRoomBookingService.getSingleRoommatesRequest(userId,subBookingId);
+
+    SendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
       message: "Roommate requests retrieved successfully",
       data: result,
     });
   },
 );
+const deleteRoommatesRequest = CatchAsync(
+  async (req: Request, res: Response) => {
+    const user = req.user as IRequestUser;
+    const userId = user.userId as string;
+    const subBookingId = req.params.subBookingId as string;
+
+    const result = await SubRoomBookingService.deleteRoommatesRequest(
+      userId,
+      subBookingId,
+    );
+
+    SendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Roommate requests delete successfully",
+      data: result,
+    });
+  },
+);
+
+
 const getMyRequest = CatchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;
   const userId = user.userId as string;
@@ -118,4 +155,6 @@ export const SubRoomBookingController = {
   subBookingPaymentCallback,
   cancelSubRoomBooking,
   getMyRequest,
+  getSingleRoommatesRequest,
+  deleteRoommatesRequest,
 };

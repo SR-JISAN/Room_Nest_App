@@ -7,6 +7,7 @@ import { ICreateBooking } from "./booking.interface";
 import { IRequestUser } from "../../middleware/check.auth";
 
 
+
 const createBooking =CatchAsync(async(req:Request,res:Response)=>{
 
     const userId =req.user?.userId as string;
@@ -20,6 +21,21 @@ const result = await BookingService.creteBooking(payload, userId);
         message: "Booking has been created",
         data: result
     })
+});
+
+
+const getRequest = CatchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const userId = user.userId as string;
+
+  const result = await BookingService.getBooking(userId);
+
+  SendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Booking requests retrieved successfully",
+    data: result,
+  });
 });
 
 
@@ -66,4 +82,5 @@ export const BookingController = {
   payExistPayments,
   bookingPaymentCallback,
   refundPayments,
+  getRequest,
 };
