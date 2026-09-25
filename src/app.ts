@@ -1,4 +1,4 @@
-import type { Application, NextFunction, Request, Response } from "express";
+import type { Application, Request, Response } from "express";
 import express from "express";
 import cors from "cors";
 import config from "./app/config";
@@ -10,12 +10,14 @@ import { AuthRoute } from "./app/model/auth/auth.route";
 import { UserRouter } from "./app/model/users/user.route";
 import { AmenitiesRouter } from "./app/model/amenities/amenities.route";
 import { PropertyRoute } from "./app/model/properties/properties.route";
-import { getBkashIdToken } from "./app/lib/bkash";
 import { BookingRoute } from "./app/model/booking/booking.route";
 import { PaymentRoutes } from "./app/model/payments/payments.route";
 import { SubBookingRoute } from "./app/model/subBooking/sub.route";
 import { ReviewRoute } from "./app/model/reviews/reviews.route";
-import { DashboardRoutes } from "./app/model/dashboard/admin.dashboard/admin.dashboard.route";
+import { AdminDashboardRoutes } from "./app/model/dashboard/admin.dashboard/admin.dashboard.route";
+import { LandlordDashboardRoutes } from "./app/model/dashboard/landlord.dashboard/landlord.route";
+import { UserDashboard } from "./app/model/dashboard/user.dashboard/user.route";
+
 
 
 
@@ -66,7 +68,9 @@ app.use("/api/payments",PaymentRoutes);
 
 app.use("/api/sub/booking",SubBookingRoute);
 
-app.use("/api/dashboard",DashboardRoutes)
+app.use("/api/dashboard",AdminDashboardRoutes)
+app.use("/api/dashboard",LandlordDashboardRoutes)
+app.use("/api/dashboard",UserDashboard)
 
 
 app.use("/api/reviews",ReviewRoute);

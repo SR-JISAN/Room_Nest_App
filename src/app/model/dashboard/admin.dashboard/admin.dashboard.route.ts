@@ -9,4 +9,4 @@ const router = express.Router();
 
 router.get("/admin", auth(Role.ADMIN), DashboardController.getAdminDashboard);
 
-export const DashboardRoutes = router;
+export const AdminDashboardRoutes = router;
