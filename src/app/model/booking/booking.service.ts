@@ -234,14 +234,161 @@ const getSingleBooking = async (userId:string,bookingId:string)=>{
 
   if (isExistUser.status !== UserStatus.ACTIVE) {
     throw new AppError(httpStatus.BAD_REQUEST, `User is ${isExistUser.status}`);
-  }
-  if (isExistUser.role === Role.LANDLORD) {
-    throw new AppError(httpStatus.UNAUTHORIZED, "You cant not accessed it");
+  };
+
+const isExistBooking = await prisma.booking.findUnique({
+  where: {
+    id: bookingId,
+  },
+});
+
+if(!isExistBooking){
+  throw new AppError(httpStatus.NOT_FOUND,"Booking not found")
+}
+
+if(isExistUser.role === Role.USER){
+  if(isExistUser.id !== isExistBooking.userId){
+    throw new AppError(httpStatus.UNAUTHORIZED,"You are not authorized for see this booking.")
   }
 
+  const Booking =await prisma.booking.findUnique({
+    where:{
+      id:isExistBooking.id,
+      userId:isExistUser.id
+    }
+  })
+
+  return Booking
 
 
 }
+
+return isExistBooking
+
+
+
+};
+
+
+const cancelBooking = async (userId: string, bookingId: string) => {
+  const isExistUser = await prisma.users.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!isExistUser) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (isExistUser.isDeleted) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
+  }
+
+  if (!isExistUser.emailVerified) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is not verified");
+  }
+
+  if (isExistUser.status !== UserStatus.ACTIVE) {
+    throw new AppError(httpStatus.BAD_REQUEST, `User is ${isExistUser.status}`);
+  }
+
+  const isExistBooking = await prisma.booking.findUnique({
+    where: {
+      id: bookingId,
+      userId: isExistUser.id,
+    },
+  });
+  if (!isExistBooking) {
+    throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
+  }
+
+  if (
+    isExistBooking.status === BookingStatus.COMPLETED ||
+    isExistBooking.status === BookingStatus.CONFIRMED
+  ) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Booking is ${isExistBooking.status}`,
+    );
+  }
+
+  if (isExistBooking.userId === isExistUser.id) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This booking is not your can not update.",
+    );
+  }
+
+  const result = await prisma.booking.update({
+    where: {
+      id: bookingId,
+      userId: isExistUser.id,
+    },
+    data: {
+      status: BookingStatus.CANCELLED,
+    },
+  });
+};
+const deleteBooking = async (userId: string, bookingId: string) => {
+  const isExistUser = await prisma.users.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!isExistUser) {
+    throw new AppError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (isExistUser.isDeleted) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is deleted");
+  }
+
+  if (!isExistUser.emailVerified) {
+    throw new AppError(httpStatus.BAD_REQUEST, "User is not verified");
+  }
+
+  if (isExistUser.status !== UserStatus.ACTIVE) {
+    throw new AppError(httpStatus.BAD_REQUEST, `User is ${isExistUser.status}`);
+  }
+
+  const isExistBooking = await prisma.booking.findUnique({
+    where: {
+      id: bookingId,
+      userId: isExistUser.id,
+    },
+  });
+  if (!isExistBooking) {
+    throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
+  }
+
+  if (
+    isExistBooking.status === BookingStatus.COMPLETED ||
+    isExistBooking.status === BookingStatus.CONFIRMED
+  ) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      `Booking is ${isExistBooking.status}`,
+    );
+  }
+
+  if (isExistBooking.userId === isExistUser.id) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      "This booking is not your can not delete.",
+    );
+  }
+
+  const result = await prisma.booking.delete({
+    where: {
+      id: bookingId,
+      userId: isExistUser.id,
+    }
+  });
+  return result;
+};
+
 
 
 
@@ -752,4 +899,7 @@ export const BookingService = {
   bookingPaymentCallback,
   refundBooking,
   getBooking,
+  getSingleBooking,
+  cancelBooking,
+  deleteBooking,
 };

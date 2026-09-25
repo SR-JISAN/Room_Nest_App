@@ -33,7 +33,51 @@ const getRequest = CatchAsync(async (req: Request, res: Response) => {
   SendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
+    message: "All Booking requests retrieved successfully",
+    data: result,
+  });
+});
+
+
+const getSingleBooking = CatchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const userId = user.userId as string;
+  const bookingId = req.params.bookingId as string
+
+  const result = await BookingService.getSingleBooking(userId, bookingId);
+
+  SendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
     message: "Booking requests retrieved successfully",
+    data: result,
+  });
+});
+const cancelBooking = CatchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const userId = user.userId as string;
+  const bookingId = req.params.bookingId as string
+
+  const result = await BookingService.cancelBooking(userId, bookingId);
+
+  SendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Booking Cancelled successfully",
+    data: result,
+  });
+});
+const deleteBooking = CatchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const userId = user.userId as string;
+  const bookingId = req.params.bookingId as string;
+
+  const result = await BookingService.deleteBooking(userId, bookingId);
+
+  SendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Booking deleted successfully",
     data: result,
   });
 });
@@ -83,4 +127,7 @@ export const BookingController = {
   bookingPaymentCallback,
   refundPayments,
   getRequest,
+  getSingleBooking,
+  cancelBooking,
+  deleteBooking,
 };

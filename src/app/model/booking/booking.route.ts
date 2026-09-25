@@ -16,6 +16,12 @@ router.post(
 
 router.get("/get-booking",auth(Role.LANDLORD, Role.ADMIN, Role.USER),BookingController.getRequest);
 
+router.get("/get-single-booking/:bookingId",auth(Role.LANDLORD, Role.ADMIN, Role.USER),BookingController.getSingleBooking);
+
+router.patch("/cancel-booking/:bookingId",auth( Role.USER),BookingController.cancelBooking);
+
+router.delete("/delete-booking/:bookingId",auth( Role.USER),BookingController.deleteBooking);
+
 
 router.post(
   "/:bookingId/pay",
