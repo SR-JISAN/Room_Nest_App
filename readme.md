@@ -241,7 +241,7 @@ Example:
 
 
 FRONTEND_URL=http://localhost:3000
-BACKEND_URL=http://localhost:5000
+BACKEND_URL=[http://localhost:5000](https://room-nest-server.vercel.app/)
 
 JWT_ACCESS_SECRET=your_access_secret
 JWT_REFRESH_SECRET=your_refresh_secret
