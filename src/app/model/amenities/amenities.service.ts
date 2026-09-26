@@ -155,13 +155,13 @@ const deleteAmenities =async (payload:IAddAmenities,user:IRequestUser)=>{
     );
   };
 
-  const deleteAmenities = await prisma.amenities.delete({
+  const deleteAmenity = await prisma.amenities.delete({
     where:{
         amenityName:payload.amenityName
     }
   })
 
-
+return deleteAmenity;
 }
 
 export const AmenitiesService = {
