@@ -17,6 +17,7 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "packageManager": "pnpm@11.14.0",
   "dependencies": {
     "@biomejs/biome": "^2.5.14",
     "@prisma/adapter-pg": "^7.10.0",
