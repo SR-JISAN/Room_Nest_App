@@ -1,4 +1,4 @@
-Room Nest --- Backend API                                                    Live Link: https://room-nest-server.vercel.app
+Room Nest --- Backend API                                                   | Live Link: https://room-nest-server.vercel.app
 
 Room Nest is a backend server for a property rental and booking
 platform. It provides REST APIs for authentication, users, properties,
