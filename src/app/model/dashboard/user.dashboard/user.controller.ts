@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type{ Request, Response } from "express";
 import { CatchAsync } from "../../../utils/catchAsync";
 import { DashboardService } from "./user.service";
 import { SendResponse } from "../../../utils/sendResponse";

@@ -1,4 +1,4 @@
-import { Response } from "express"
+import type{ Response } from "express"
 
 
 
@@ -12,7 +12,7 @@ type TMeta = {
 type TResponse<T> ={
   success :boolean
   statusCode: number
-  message : String
+  message : string
   data: T
   meta?: TMeta
 }

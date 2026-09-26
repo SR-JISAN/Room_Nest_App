@@ -1,12 +1,12 @@
-import { Request, Response } from "express";
+import type{ Request, Response } from "express";
 import { CatchAsync } from "../../utils/catchAsync";
 import httpStatus from "http-status"
 import { PropertiesService } from "./properties.service";
 import { SendResponse } from "../../utils/sendResponse";
-import { IRequestUser } from "../../middleware/check.auth";
+import type{ IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
 import { CreatePropertyZodSchema } from "./properties.zod";
-import { IGetProperties } from "./properties.interface";
+import type{ IGetProperties } from "./properties.interface";
 
 
 const getAllProperties = CatchAsync(async (req: Request, res: Response) => {

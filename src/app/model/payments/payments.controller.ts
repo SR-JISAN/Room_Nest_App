@@ -1,12 +1,12 @@
 import type { Request, Response } from "express";
 import httpStatus from "http-status";
-
 import { CatchAsync } from "../../utils/catchAsync";
 import { SendResponse } from "../../utils/sendResponse";
 import { PaymentServices } from "./payments.service";
+import type{ IRequestUser } from "../../middleware/check.auth";
 
 const getMyPayments = CatchAsync(async (req: Request, res: Response) => {
-  const user = req.user!;
+  const user = req.user as IRequestUser;
 
   const { data, meta } = await PaymentServices.getMyPayments(req.query, user);
   SendResponse(res, {
@@ -31,7 +31,7 @@ const getAllPayments = CatchAsync(async (req: Request, res: Response) => {
 
 const getSinglePayment = CatchAsync(async (req: Request, res: Response) => {
   const paymentId = req.params.paymentId as string;
-  const user = req.user!;
+  const user = req.user as IRequestUser;
 
   const result = await PaymentServices.getSinglePayment(paymentId, user);
   SendResponse(res, {

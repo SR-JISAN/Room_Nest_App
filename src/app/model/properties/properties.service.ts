@@ -1,12 +1,13 @@
 import { prisma } from "../../lib/prisma";
-import { IRequestUser } from "../../middleware/check.auth";
+import type{ IRequestUser } from "../../middleware/check.auth";
 import httpStatus from "http-status"
 import AppError from "../../utils/appError";
-import { PropertyType, Role } from "../../../generated/prisma/enums";
-import { IGetProperties, IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface";
-import { UploadApiResponse } from "cloudinary";
+import type{ PropertyType } from "../../../generated/prisma/enums";
+import {  Role } from "../../../generated/prisma/enums";
+import type{ IGetProperties, IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface";
+import type{ UploadApiResponse } from "cloudinary";
 import { cloudinary } from "../../lib/cloudinary";
-import { PropertiesWhereInput } from "../../../generated/prisma/models";
+import type{ PropertiesWhereInput } from "../../../generated/prisma/models";
 
  
 
@@ -45,12 +46,12 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
      );
    };
 
-   const propertyImageCloudinaryResult = await Promise.all(propertyImageFiles.map(async(image)=>{
+   const propertyImageCloudinaryResult = await Promise.all(propertyImageFiles.map((image)=>{
     return   new Promise<UploadApiResponse>((resolve,reject)=>{
         cloudinary.uploader.upload_stream({
             "resource_type": "auto"
         },
-        async(error,result)=>{
+        (error,result)=>{
             if(error){
                 return reject(error)
             };
@@ -72,7 +73,7 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
    }));
 
 
-   const result = await prisma.$transaction(async (tx) => {
+   const results = await prisma.$transaction(async (tx) => {
      const amenities = await tx.amenities.findMany({
        where: {
          amenityName: {
@@ -160,7 +161,7 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
      return property;
    });
 
-   return result;
+   return results;
  };
 
  const updateProperties = async (
@@ -364,14 +365,14 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
      }
 
      const roomImageCloudinaryResult = await Promise.all(
-       roomImageFiles.map(async (image) => {
+       roomImageFiles.map( (image) => {
          return new Promise<UploadApiResponse>((resolve, reject) => {
            cloudinary.uploader
              .upload_stream(
                {
                  resource_type: "auto",
                },
-               async (error, result) => {
+                (error, result) => {
                  if (error) {
                    return reject(error);
                  }
@@ -401,13 +402,13 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
        })),
      });
 
-     const result = await prisma.roomImage.findMany({
+     const results = await prisma.roomImage.findMany({
        where: {
          roomId,
        },
      });
 
-     return result
+     return results;
  };
 
  const updatePropertyImages = async (
@@ -488,7 +489,7 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
    
 
 
-   const result = await prisma.propertyImage.update({
+   const results = await prisma.propertyImage.update({
     where:{id:isPropertyImageExist.id},
     data:{
         propertyImageURL:uploadUpdatedPropertyImage.secure_url,
@@ -499,7 +500,7 @@ import { PropertiesWhereInput } from "../../../generated/prisma/models";
    if(uploadUpdatedPropertyImage && isPropertyImageExist.propertyImagePublicId){
     await cloudinary.uploader.destroy(isPropertyImageExist.propertyImagePublicId);
    }
-return result;
+return results;
  };
 
 
@@ -598,7 +599,7 @@ return result;
      },
    );
 
-   const result = await prisma.roomImage.update({
+   const results = await prisma.roomImage.update({
      where: { id: isRoomImageExist.id },
      data: {
        roomImageURL: uploadUpdatedRoomImage.secure_url,
@@ -611,7 +612,7 @@ return result;
        isRoomImageExist.roomImagePublicId,
      );
    }
-   return result;
+   return results;
  };
 
 
@@ -814,10 +815,6 @@ const getAllProperties = async(query:IGetProperties)=>{
     }
 
    andConditions.push({isDeleted:false})
-
-
-console.log("QUERY:", query);
-console.log("AND CONDITIONS:", JSON.stringify(andConditions, null, 2));
 
     const result = await prisma.properties.findMany({
         where:{

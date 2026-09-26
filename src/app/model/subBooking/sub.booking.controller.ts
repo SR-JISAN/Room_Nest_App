@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import type{ Request, Response } from "express";
 import { CatchAsync } from "../../utils/catchAsync";
 import { SendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status"
 import { SubRoomBookingService } from "./sub.booking.service";
-import { IRequestUser } from "../../middleware/check.auth";
+import type{ IRequestUser } from "../../middleware/check.auth";
 
 
 const createBooking  = CatchAsync(async(req:Request,res:Response)=>{

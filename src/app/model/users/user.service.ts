@@ -1,8 +1,8 @@
-import { UploadApiResponse } from "cloudinary";
+import type{ UploadApiResponse } from "cloudinary";
 import { prisma } from "../../lib/prisma";
-import { IRequestUser } from "../../middleware/check.auth";
+import type { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
-import { IUpdateProfile } from "./user.interface"
+import type { IUpdateProfile } from "./user.interface";
 import httpStatus from "http-status"
 import { cloudinary } from "../../lib/cloudinary";
 

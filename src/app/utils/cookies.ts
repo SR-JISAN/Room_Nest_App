@@ -1,4 +1,4 @@
-import { CookieOptions } from "express";
+import type{ CookieOptions } from "express";
 import config from "../config";
 
 export const accessTokenCookies: CookieOptions = {

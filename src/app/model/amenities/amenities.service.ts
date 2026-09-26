@@ -1,9 +1,9 @@
+import httpStatus from "http-status";
 import { Role } from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
-import { IRequestUser } from "../../middleware/check.auth";
+import type { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
-import { IAddAmenities } from "./amenities.interface"
-import httpStatus from "http-status"
+import type { IAddAmenities } from "./amenities.interface";
 
 const getAmenities = async (user: IRequestUser) => {
   const isExistUser = await prisma.users.findUnique({

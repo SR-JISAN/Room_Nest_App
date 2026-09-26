@@ -1,24 +1,24 @@
+import crypto from "crypto";
+import httpStatus from "http-status";
 import { prisma } from "../../lib/prisma";
+import { redisClient } from "../../lib/redis";
 import AppError from "../../utils/appError";
 import type { IGoogleLogin, ILogin, IResetPassword, IResetPasswordVerified, IUpdatePassword, IUser, IVerifyEmail } from "./auth.interface";
-import httpStatus from "http-status"
-import crypto from "crypto"
-import { redisClient } from "../../lib/redis";
 
-import config from "../../config";
-import path from "path";
-import ejs from "ejs"
-import { AuthProvider, Role, UserStatus } from "../../../generated/prisma/enums";
-import { JwtUtils } from "../../utils/jwt";
-import { JwtPayload, SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { TokenPayload } from "google-auth-library";
+import ejs from "ejs";
+import type { TokenPayload } from "google-auth-library";
+import type { JwtPayload, SignOptions } from "jsonwebtoken";
+import path from "path";
+import { AuthProvider, Role, UserStatus } from "../../../generated/prisma/enums";
+import config from "../../config";
 import { GoogleClient } from "../../lib/google.client";
-import { IRequestUser } from "../../middleware/check.auth";
 import { transporter } from "../../lib/nodemailer";
+import type { IRequestUser } from "../../middleware/check.auth";
+import { JwtUtils } from "../../utils/jwt";
 
 const register = async (payload:IUser)=>{
-     const {name,password,imageURL,profile} = payload
+     const {name,password,profile} = payload
      const email = payload.email.trim().toLowerCase();
      const isExistUser = await prisma.users.findUnique(
       {
@@ -326,6 +326,7 @@ const googleLogin = async (payload:IGoogleLogin) => {
 
         googleTokenPayload = ticket.getPayload();
 
+    
     } catch (error:any) {
         console.log(error);
         throw new AppError(httpStatus.BAD_REQUEST,"Invalid or Expired Your Token")

@@ -1,4 +1,4 @@
-import { PaymentScalarWhereInput } from "../../../generated/prisma/models";
+import type{ PaymentScalarWhereInput } from "../../../generated/prisma/models";
 
 export interface IQuery extends PaymentScalarWhereInput {
   searchTerm?: string;

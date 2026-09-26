@@ -1,10 +1,10 @@
-import { Request, Response } from "express";
+import type{ Request, Response } from "express";
 import { CatchAsync } from "../../utils/catchAsync";
 import { SendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status"
 import { BookingService } from "./booking.service";
-import { ICreateBooking } from "./booking.interface";
-import { IRequestUser } from "../../middleware/check.auth";
+import type { ICreateBooking } from "./booking.interface";
+import type{ IRequestUser } from "../../middleware/check.auth";
 
 
 

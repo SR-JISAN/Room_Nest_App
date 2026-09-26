@@ -1,11 +1,11 @@
 import httpStatus from "http-status";
 import { Role } from "../../../generated/prisma/enums";
-import { PaymentWhereInput } from "../../../generated/prisma/models";
+import type{ PaymentWhereInput } from "../../../generated/prisma/models";
 
 import { prisma } from "../../lib/prisma";
-import { IRequestUser } from "../../middleware/check.auth";
+import type{ IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
-import { IQuery } from "./payments.interface";
+import type{ IQuery } from "./payments.interface";
 
 
 
@@ -193,7 +193,7 @@ const getSinglePayment = async (paymentId: string, user: IRequestUser) => {
   }
 
   if (user.role === Role.USER) {
-    if (payment.booking.user.id !== user.userId) {
+    if (payment.booking?.user.id !== user.userId) {
       throw new AppError(
         httpStatus.FORBIDDEN,
         "You Are Not Allowed To View This Payment",

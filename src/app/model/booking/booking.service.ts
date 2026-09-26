@@ -1,12 +1,10 @@
-import path from "path";
 import { BookingStatus, PaymentMethod, PaymentStatus, PaymentType, Role, RoomStatus, UserStatus } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
-import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
-import { IRequestUser } from "../../middleware/check.auth";
+import type { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
-import { ICreateBooking } from "./booking.interface";
+import type { ICreateBooking } from "./booking.interface";
 import httpStatus from "http-status"
 
 
@@ -329,6 +327,8 @@ const cancelBooking = async (userId: string, bookingId: string) => {
       status: BookingStatus.CANCELLED,
     },
   });
+
+  return result;
 };
 const deleteBooking = async (userId: string, bookingId: string) => {
   const isExistUser = await prisma.users.findUnique({

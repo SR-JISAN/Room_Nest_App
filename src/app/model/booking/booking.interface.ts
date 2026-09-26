@@ -1,4 +1,3 @@
-import { PaymentStatus } from "../../../generated/prisma/enums";
 
 export interface ICreateBooking {
   roomId: string;

@@ -1,9 +1,9 @@
-import { Request, Response } from "express"
+import type{ Request, Response } from "express"
 import { CatchAsync } from "../../utils/catchAsync"
 import { SendResponse } from "../../utils/sendResponse"
 import httpStatus from "http-status";
 import { AuthService } from "./auth.service";
-import { IRequestUser } from "../../middleware/check.auth";
+import type{ IRequestUser } from "../../middleware/check.auth";
 import { accessTokenCookies, refreshTokenCookies } from "../../utils/cookies";
 import AppError from "../../utils/appError";
 import config from "../../config";

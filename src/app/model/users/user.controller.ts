@@ -1,11 +1,10 @@
-import { Request, Response } from "express";
+import type{ Request, Response } from "express";
 import { CatchAsync } from "../../utils/catchAsync";
 import { SendResponse } from "../../utils/sendResponse";
 import httpStatus from "http-status"
 import { UserService } from "./user.service";
-import { IRequestUser } from "../../middleware/check.auth";
-import AppError from "../../utils/appError";
-import config from "../../config";
+import type{ IRequestUser } from "../../middleware/check.auth";
+
 
 
 

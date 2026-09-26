@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import type{ Request, Response } from "express";
 import httpStatus from "http-status";
 import { CatchAsync } from "../../../utils/catchAsync";
 import { DashboardService } from "./admin.dashboard.service";

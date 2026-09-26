@@ -13,23 +13,23 @@ const PORT = config.port;
 const main= async()=>{
    try {
     await prisma.$connect();
-    console.log("Connected to the database successfully.");
+    ;
     //for test 
     AdminSeed()
-    console.log("admin created")
+    
     LandlordSeed()
-    console.log("landlord created")
+    
 
     //redis connected
 
     await redisClient.connect()
 
-    console.log("redis connected")
+   
 
     //nodemailer connected
 
     await transporter.verify()
-    console.log("transporter connected")
+    
 
 
     app.listen(PORT, () => {

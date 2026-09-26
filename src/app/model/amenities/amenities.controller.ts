@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import { CatchAsync } from "../../utils/catchAsync";
 import { SendResponse } from "../../utils/sendResponse";
 import  httpStatus  from "http-status";
 import { AmenitiesService } from "./amenities.service";
-import { IRequestUser } from "../../middleware/check.auth";
+import type { IRequestUser } from "../../middleware/check.auth";
 
 const getAmenities = CatchAsync(async (req: Request, res: Response) => {
   const user = req.user as IRequestUser;

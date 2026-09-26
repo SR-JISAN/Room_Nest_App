@@ -1,4 +1,4 @@
-import { Gender } from "../../../generated/prisma/enums";
+import type{ Gender } from "../../../generated/prisma/enums";
 
 
 export interface ICreateSubRoomBooking {
@@ -11,4 +11,4 @@ export interface ICreateSubRoomBooking {
   occupantCount: number;
   startDate: Date;
   endDate?: Date;
-}
+};

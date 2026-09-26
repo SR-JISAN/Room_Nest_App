@@ -1,4 +1,4 @@
-import z from "zod";
+import type z from "zod";
 import { CatchAsync } from "../utils/catchAsync";
 import type { NextFunction, Request, Response } from "express";
 import AppError from "../utils/appError";

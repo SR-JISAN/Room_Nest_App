@@ -1,8 +1,7 @@
-import { BookingStatus, ReviewRating } from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
 import AppError from "../../utils/appError";
 import httpStatus from "http-status"
-import { IReviewRating } from "./reviews.interface";
+import type{ IReviewRating } from "./reviews.interface";
 
 const addReviews = async (userId: string, roomId: string, payload: IReviewRating) => {
   // 1. Check user

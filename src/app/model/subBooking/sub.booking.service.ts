@@ -1,9 +1,9 @@
 import { BookingStatus, PaymentMethod, PaymentStatus, PaymentType, Role, RoomStatus, SubBookingStatus, UserStatus } from "../../../generated/prisma/enums";
 import { prisma } from "../../lib/prisma";
-import { IRequestUser } from "../../middleware/check.auth";
+import type{ IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
 import httpStatus from "http-status";
-import { ICreateSubRoomBooking } from "./sub.booking.interface";
+import type{ ICreateSubRoomBooking } from "./sub.booking.interface";
 import { getBkashIdToken } from "../../lib/bkash";
 import config from "../../config";
 
@@ -620,14 +620,7 @@ const deleteRoommatesRequest = async(userId:string, subBookingId:string )=>{
    return subBooking;
 
 
-}
-
-
-
-
-
-
-
+};
 
 const getMyRequest = async (userId: string) => {
   const isExistSubUser = await prisma.users.findUnique({

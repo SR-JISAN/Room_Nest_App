@@ -1,4 +1,4 @@
-import { ReviewRating } from "../../../generated/prisma/enums"
+import type{ ReviewRating } from "../../../generated/prisma/enums"
 
 export interface IReviewRating {
     note?: string

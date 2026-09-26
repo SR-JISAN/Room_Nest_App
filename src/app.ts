@@ -32,22 +32,6 @@ app.use(
 
 app.use(express.urlencoded({ extended: true }));
 
-// test
-// app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
-//   try {
-//     const grantIdTokenResult = await getBkashIdToken();
-
-//     console.log(grantIdTokenResult);
-//     res.status(httpStatus.OK).json({
-//       success: true,
-//       message: "Test API is Working Fine",
-//       data: null,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     next(error);
-//   }
-// });
 
 app.use(express.json());
 app.use(cookieParser());
@@ -79,7 +63,7 @@ app.use("/api/reviews",ReviewRoute);
 
 
 //main routes
-app.get("/", async (req: Request, res: Response) => {
+app.get("/",(req: Request, res: Response) => {
   res.status(httpStatus.OK).json({
     success: true,
     message: "Welcome to Room Nest App",

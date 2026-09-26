@@ -1,4 +1,3 @@
-import { Role } from "../../../generated/prisma/enums";
 
 export interface IUser {
   name: string;
@@ -9,9 +8,9 @@ export interface IUser {
 }
 
 interface IProfile {
-  bio?: String;
-  address?: String;
-  occupation?: String;
+  bio?: string;
+  address?: string;
+  occupation?: string;
   contactNumber?: string;
   dateOfBirth?: string;
 }

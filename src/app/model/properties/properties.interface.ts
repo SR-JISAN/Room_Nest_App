@@ -1,5 +1,4 @@
-import { PropertyType, RoomType } from "../../../generated/prisma/enums";
-import { PropertiesWhereInput } from "../../../generated/prisma/models";
+import type{ PropertyType, RoomType } from "../../../generated/prisma/enums";
 
 
 
