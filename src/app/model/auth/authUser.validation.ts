@@ -21,7 +21,7 @@ export const RegistrationValidationZODSchema = z.object({
       (email) => {
         const domain = email.split("@")[1]?.toLowerCase();
 
-        return allowedEmailDomains.includes(domain);
+        return allowedEmailDomains.includes(domain!);
       },
       {
         message: "Please use a supported email provider",
@@ -54,7 +54,7 @@ export const VerifyEmailZodSchema = z.object({
     (email) => {
       const domain = email.split("@")[1]?.toLowerCase();
 
-      return allowedEmailDomains.includes(domain);
+      return allowedEmailDomains.includes(domain!);
     },
     {
       message: "Please use a supported email provider",
@@ -72,7 +72,7 @@ export const LoginValidationZodSchema = z.object({
     (email) => {
       const domain = email.split("@")[1]?.toLowerCase();
 
-      return allowedEmailDomains.includes(domain);
+      return allowedEmailDomains.includes(domain!);
     },
     {
       message: "Please use a supported email provider",
@@ -115,7 +115,7 @@ export const ResetPasswordZodSchema = z.object({
     (email) => {
       const domain = email.split("@")[1]?.toLowerCase();
 
-      return allowedEmailDomains.includes(domain);
+      return allowedEmailDomains.includes(domain!);
     },
     {
       message: "Please use a supported email provider",

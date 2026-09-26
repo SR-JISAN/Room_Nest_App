@@ -1,15 +1,20 @@
 {
   "compilerOptions": {
-    "module": "esnext",
-    "moduleResolution": "bundler",
-    "target": "es2023",
     "rootDir": "./",
     "outDir": "./dist",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "target": "esnext",
+    "types": ["node"],
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "noUncheckedIndexedAccess": true,
     "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "ignoreDeprecations": "5.0"
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "generated"]
