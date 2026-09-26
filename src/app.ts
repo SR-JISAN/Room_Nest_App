@@ -1,7 +1,6 @@
 import type { Application, Request, Response } from "express";
 import express from "express";
 import cors from "cors";
-import config from "./app/config";
 import httpStatus from "http-status";
 import { globalErrorHandler } from "./app/middleware/global.error";
 import cookieParser from "cookie-parser";
@@ -17,6 +16,7 @@ import { ReviewRoute } from "./app/model/reviews/reviews.route";
 import { AdminDashboardRoutes } from "./app/model/dashboard/admin.dashboard/admin.dashboard.route";
 import { LandlordDashboardRoutes } from "./app/model/dashboard/landlord.dashboard/landlord.route";
 import { UserDashboard } from "./app/model/dashboard/user.dashboard/user.route";
+import config from "./app/config";
 
 
 

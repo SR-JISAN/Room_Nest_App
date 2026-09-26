@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "tsup",
     "start": "node dist/src/server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format:check": "npx @biomejs/biome format ./src",
-    "format:fix": "npx @biomejs/biome format --write ./src",
-    "lint:check": "npx @biomejs/biome lint ./src",
-    "lint:fix": "npx @biomejs/biome lint --write ./src"
+    "format:check": "pnpx @biomejs/biome format ./src",
+    "format:fix": "pnpx @biomejs/biome format --write ./src",
+    "lint:check": "pnpx @biomejs/biome lint ./src",
+    "lint:fix": "pnpx @biomejs/biome lint --write ./src"
   },
   "keywords": [],
   "author": "",
@@ -22,7 +22,6 @@
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@types/ejs": "^3.1.5",
-    "@types/node": "^26.6.2",
     "@types/pdfkit": "^0.17.6",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
@@ -40,6 +39,7 @@
     "pdfkit": "^0.20.2",
     "pg": "^8.23.0",
     "redis": "^6.2.1",
+    "tsup": "^8.5.1",
     "zod": "^4.6.2"
   },
   "devDependencies": {
@@ -48,7 +48,9 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.2.0",
+    "@types/node": "^26.6.2",
     "@types/pg": "^8.23.1",
+    "esbuild": "^0.28.2",
     "prisma": "7.10.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
