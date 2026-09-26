@@ -1,9 +1,28 @@
 {
+  "name": "Room Nest App Server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/src/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format:check": "npx @biomejs/biome format ./src",
+    "format:fix": "npx @biomejs/biome format --write ./src",
+    "lint:check": "npx @biomejs/biome lint ./src",
+    "lint:fix": "npx @biomejs/biome lint --write ./src"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
   "dependencies": {
     "@biomejs/biome": "^2.5.14",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@types/ejs": "^3.1.5",
+    "@types/node": "^26.6.2",
     "@types/pdfkit": "^0.17.6",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
@@ -29,18 +48,9 @@
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.2.0",
-    "@types/node": "^22.20.2",
     "@types/pg": "^8.23.1",
     "prisma": "7.10.0",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
-  },
-  "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
   }
 }
