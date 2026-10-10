@@ -10,11 +10,15 @@ import { auth } from "../../middleware/check.auth";
 const router = Router()
 
 router.post("/register",ValidateRequest(RegistrationValidationZODSchema),AuthController.register)
-router.post("/email-verify",ValidateRequest(VerifyEmailZodSchema), AuthController.emailVerify)
-router.post("/google-login",AuthController.googleLogin)
+router.post("/email-verify",ValidateRequest(VerifyEmailZodSchema), AuthController.emailVerify);
+
+
+router.post("/google-login",AuthController.googleLogin);
+
 router.post("/login",ValidateRequest(LoginValidationZodSchema),AuthController.login )
 
-router.patch("/update-password",ValidateRequest(UpdatePasswordZodSchema),auth(Role.USER, Role.ADMIN, Role.LANDLORD),AuthController.updatePassword)
+router.patch("/update-password",ValidateRequest(UpdatePasswordZodSchema),auth(Role.USER, Role.ADMIN, Role.LANDLORD),AuthController.updatePassword);
+
 router.post(
   "/reset-password",
   ValidateRequest(ResetPasswordZodSchema),
@@ -42,5 +46,5 @@ router.post(
 
 
 
-export const AuthRoute = router;
+export const AuthRoute: Router = router;
 

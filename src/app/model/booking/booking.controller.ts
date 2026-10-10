@@ -82,6 +82,17 @@ const deleteBooking = CatchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const rejectBooking = CatchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const result = await BookingService.rejectBooking(user.userId, req.params.bookingId as string);
+  SendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Booking request rejected",
+    data: result,
+  });
+});
+
 
 const payExistPayments = CatchAsync(async (req: Request, res: Response) => {
   const bookingId = req.params.bookingId as string;
@@ -111,8 +122,9 @@ const bookingPaymentCallback = CatchAsync(
 
 const refundPayments = CatchAsync(async (req: Request, res: Response) => {
   const bookingId = req.params.bookingId as string;
+  const user = req.user as IRequestUser;
 
-  const result = await BookingService.refundBooking(bookingId);
+  const result = await BookingService.refundBooking(bookingId, user);
   SendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
@@ -130,4 +142,5 @@ export const BookingController = {
   getSingleBooking,
   cancelBooking,
   deleteBooking,
+  rejectBooking,
 };

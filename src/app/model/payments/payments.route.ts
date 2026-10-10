@@ -20,4 +20,4 @@ router.get(
   PaymentController.getSinglePayment,
 );
 
-export const PaymentRoutes = router;
+export const PaymentRoutes: Router = router;

@@ -1,5 +1,6 @@
 import type{ UploadApiResponse } from "cloudinary";
 import { prisma } from "../../lib/prisma";
+import { Role, UserStatus } from "../../../generated/prisma/enums";
 import type { IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
 import type { IUpdateProfile } from "./user.interface";
@@ -183,9 +184,43 @@ const updateProfileImage = async (
   };
 };
 
+const getAdminUsers = async (page: number, limit: number, role?: Role, status?: UserStatus) => {
+  const where = {
+    isDeleted: false,
+    ...(role ? { role } : {}),
+    ...(status ? { status } : {}),
+  };
+  const [users, total] = await Promise.all([
+    prisma.users.findMany({
+      where,
+      select: { id: true, name: true, email: true, role: true, status: true, emailVerified: true, imageURL: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.users.count({ where }),
+  ]);
+  return { result: users, Meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+};
+
+const updateAdminUserStatus = async (userId: string, status: UserStatus, adminId: string) => {
+  if (userId === adminId) {
+    throw new AppError(httpStatus.BAD_REQUEST, "You cannot change your own account status.");
+  }
+  const target = await prisma.users.findFirst({ where: { id: userId, isDeleted: false } });
+  if (!target) throw new AppError(httpStatus.NOT_FOUND, "User not found.");
+  return prisma.users.update({
+    where: { id: target.id },
+    data: { status, ...(status === UserStatus.DELETED ? { isDeleted: true, deletedAt: new Date() } : {}) },
+    select: { id: true, name: true, email: true, role: true, status: true, emailVerified: true, imageURL: true },
+  });
+};
+
 
  
 export const UserService = {
   updateProfile,
   updateProfileImage,
+  getAdminUsers,
+  updateAdminUserStatus,
 };

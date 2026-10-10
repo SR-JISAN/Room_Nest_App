@@ -52,6 +52,10 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
         throw new AppError(httpStatus.BAD_REQUEST,"Room is deleted")
     };
 
+    if (isExistRoom.roomStatus !== RoomStatus.AVAILABLE) {
+      throw new AppError(httpStatus.CONFLICT, "This room is not currently available for booking.");
+    }
+
   
     if (
       payload.occupantCount > isExistRoom.maxRoommates ||
@@ -64,13 +68,28 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
       );
     }
 
-    const transactionResult =await prisma.$transaction(async(tx)=>{
+    const transactionResult = await prisma.$transaction(async (tx) => {
+        // Serialize reservations for this room so simultaneous requests cannot overbook its remaining capacity.
+        await tx.$queryRaw`SELECT id FROM rooms WHERE id = ${isExistRoom.id} FOR UPDATE`;
+        const lockedRoom = await tx.rooms.findUnique({ where: { id: isExistRoom.id } });
+        if (!lockedRoom || lockedRoom.isDeleted || lockedRoom.roomStatus !== RoomStatus.AVAILABLE) {
+          throw new AppError(httpStatus.CONFLICT, "This room is no longer available.");
+        }
+        const pendingOccupants = await tx.booking.aggregate({
+          where: { roomId: lockedRoom.id, status: BookingStatus.PENDING },
+          _sum: { occupantCount: true },
+        });
+        const reserved = pendingOccupants._sum.occupantCount ?? 0;
+        if (lockedRoom.currentRoommates + reserved + payload.occupantCount > lockedRoom.maxRoommates) {
+          throw new AppError(httpStatus.CONFLICT, "Room capacity is reserved by other booking requests.");
+        }
 
         const createBooking = await tx.booking.create({
           data: {
-
-            startDate: payload.startDate,
-            endDate: payload.endDate,
+            startDate: new Date(`${payload.startDate}T00:00:00.000Z`),
+            endDate: payload.endDate
+              ? new Date(`${payload.endDate}T00:00:00.000Z`)
+              : null,
             userId: isExistUser.id,
             roomId: isExistRoom.id,
             occupantCount: payload.occupantCount,
@@ -78,7 +97,7 @@ const creteBooking = async (payload: ICreateBooking, userId: string) => {
             rentAmount: isExistRoom.rentAmount,
             totalAmount: isExistRoom.securityDeposit,
             note: payload.note,
-          }
+          },
         });
 
         await tx.payment.create({
@@ -132,35 +151,19 @@ const getBooking = async (userId: string) => {
     throw new AppError(httpStatus.BAD_REQUEST, `User is ${isExistUser.status}`);
   };
   if(isExistUser.role === Role.LANDLORD){
-    const property = await prisma.properties.findMany({
-      where:{
-        usersId:isExistUser.id
-      }
-    })
-
-    if(!property){
-      throw new AppError(
-        httpStatus.NOT_FOUND,
-        `property not found`,
-      );
-    };
-
-    const rooms = await prisma.rooms.findMany({
+    return prisma.booking.findMany({
       where: {
-        propertyId: {
-          in: property.map((item) => item.id),
+        room: { property: { usersId: isExistUser.id, isDeleted: false } },
+      },
+      include: {
+        room: { include: { property: { select: { id: true, title: true, city: true } } } },
+        payments: {
+          select: { id: true, amount: true, paymentStatus: true, paymentType: true, paidAt: true },
         },
-      }
+        user: { select: { id: true, name: true, imageURL: true } },
+      },
+      orderBy: { createdAt: "desc" },
     });
-    const booking = await prisma.booking.findMany({
-      where: {
-        roomId: {
-          in: rooms.map((item) => item.id),
-        },
-      }
-    });
-
-    return booking;
     
   }
 
@@ -198,8 +201,19 @@ const getBooking = async (userId: string) => {
           property: true,
         },
       },
-      payments: true,
-      user: true,
+      payments: {
+        select: { id: true, amount: true, paymentStatus: true, paymentType: true, paidAt: true },
+      },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          imageURL: true,
+          role: true,
+          status: true,
+        },
+      },
     },
 
     orderBy: {
@@ -261,10 +275,74 @@ if(isExistUser.role === Role.USER){
 
 }
 
+if (isExistUser.role === Role.LANDLORD) {
+  const landlordBooking = await prisma.booking.findFirst({
+    where: {
+      id: bookingId,
+      room: { property: { usersId: isExistUser.id, isDeleted: false } },
+    },
+    include: {
+      room: { include: { property: { select: { id: true, title: true, city: true } } } },
+      payments: true,
+      user: { select: { id: true, name: true, imageURL: true } },
+    },
+  });
+  if (!landlordBooking) throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
+  return landlordBooking;
+}
+
 return isExistBooking
 
 
 
+};
+
+const rejectBooking = async (userId: string, bookingId: string) => {
+  const actor = await prisma.users.findUnique({ where: { id: userId } });
+  if (!actor || actor.status !== UserStatus.ACTIVE || !actor.emailVerified) {
+    throw new AppError(httpStatus.FORBIDDEN, "An active verified account is required");
+  }
+  if (actor.role !== Role.ADMIN && actor.role !== Role.LANDLORD) {
+    throw new AppError(httpStatus.FORBIDDEN, "Only a landlord or admin can reject a booking");
+  }
+  const booking = await prisma.booking.findFirst({
+    where: {
+      id: bookingId,
+      ...(actor.role === Role.LANDLORD ? { room: { property: { usersId: actor.id } } } : {}),
+    },
+    include: { payments: true },
+  });
+  if (!booking) throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
+  if (booking.status !== BookingStatus.PENDING) {
+    throw new AppError(httpStatus.CONFLICT, `Booking is already ${booking.status.toLowerCase()}`);
+  }
+  if (booking.payments.some((payment) => payment.paymentStatus === PaymentStatus.PAID)) {
+    throw new AppError(httpStatus.CONFLICT, "A paid booking cannot be rejected; use the refund process instead.");
+  }
+  if (booking.payments.some((payment) => payment.bkashPaymentID && payment.paymentStatus === PaymentStatus.PENDING)) {
+    throw new AppError(httpStatus.CONFLICT, "A payment checkout is already in progress. Wait for its result before rejecting.");
+  }
+  return prisma.$transaction(async (tx) => {
+    const paymentUpdate = await tx.payment.updateMany({
+      where: {
+        bookingId: booking.id,
+        paymentStatus: PaymentStatus.PENDING,
+        bkashPaymentID: null,
+      },
+      data: { paymentStatus: PaymentStatus.CANCELLED },
+    });
+    if (paymentUpdate.count === 0) {
+      throw new AppError(httpStatus.CONFLICT, "The payment state changed. Refresh and try again.");
+    }
+    const bookingUpdate = await tx.booking.updateMany({
+      where: { id: booking.id, status: BookingStatus.PENDING },
+      data: { status: BookingStatus.REJECTED },
+    });
+    if (bookingUpdate.count !== 1) {
+      throw new AppError(httpStatus.CONFLICT, "The booking state changed. Refresh and try again.");
+    }
+    return tx.booking.findUniqueOrThrow({ where: { id: booking.id } });
+  });
 };
 
 
@@ -301,31 +379,46 @@ const cancelBooking = async (userId: string, bookingId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
   }
 
-  if (
-    isExistBooking.status === BookingStatus.COMPLETED ||
-    isExistBooking.status === BookingStatus.CONFIRMED
-  ) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      `Booking is ${isExistBooking.status}`,
-    );
-  }
+ const cancellableStatuses: BookingStatus[] = [
+   BookingStatus.PENDING,
+   BookingStatus.REJECTED,
+ ];
 
-  if (isExistBooking.userId === isExistUser.id) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "This booking is not your can not update.",
-    );
-  }
+ if (!cancellableStatuses.includes(isExistBooking.status)) {
+   throw new AppError(
+     httpStatus.CONFLICT,
+     `A ${isExistBooking.status.toLowerCase()} booking cannot be cancelled here.`,
+   );
+ }
 
-  const result = await prisma.booking.update({
+  const activeCheckout = await prisma.payment.findFirst({
     where: {
-      id: bookingId,
-      userId: isExistUser.id,
+      bookingId: isExistBooking.id,
+      paymentStatus: PaymentStatus.PENDING,
+      bkashPaymentID: { not: null },
     },
-    data: {
-      status: BookingStatus.CANCELLED,
-    },
+  });
+  if (activeCheckout) {
+    throw new AppError(httpStatus.CONFLICT, "A payment checkout is active. Wait for its result before cancelling.");
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.payment.updateMany({
+      where: { bookingId: isExistBooking.id, paymentStatus: PaymentStatus.PENDING },
+      data: { paymentStatus: PaymentStatus.CANCELLED },
+    });
+    const changed = await tx.booking.updateMany({
+      where: {
+        id: bookingId,
+        userId: isExistUser.id,
+        status: { in: [BookingStatus.PENDING, BookingStatus.REJECTED] },
+      },
+      data: { status: BookingStatus.CANCELLED, cancelledAt: new Date() },
+    });
+    if (changed.count !== 1) {
+      throw new AppError(httpStatus.CONFLICT, "The booking state changed. Refresh and try again.");
+    }
+    return tx.booking.findUniqueOrThrow({ where: { id: bookingId } });
   });
 
   return result;
@@ -363,21 +456,21 @@ const deleteBooking = async (userId: string, bookingId: string) => {
     throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
   }
 
-  if (
-    isExistBooking.status === BookingStatus.COMPLETED ||
-    isExistBooking.status === BookingStatus.CONFIRMED
-  ) {
+  const removableStatuses: BookingStatus[] = [
+    BookingStatus.CANCELLED,
+    BookingStatus.REJECTED,
+  ];
+
+  if (!removableStatuses.includes(isExistBooking.status)) {
     throw new AppError(
-      httpStatus.BAD_REQUEST,
-      `Booking is ${isExistBooking.status}`,
+      httpStatus.CONFLICT,
+      "Only cancelled or rejected bookings can be removed.",
     );
   }
 
-  if (isExistBooking.userId === isExistUser.id) {
-    throw new AppError(
-      httpStatus.BAD_REQUEST,
-      "This booking is not your can not delete.",
-    );
+  const payments = await prisma.payment.findMany({ where: { bookingId } });
+  if (payments.some((payment) => payment.paymentStatus === PaymentStatus.PAID || payment.paymentStatus === PaymentStatus.PROCESSING || payment.bkashPaymentID)) {
+    throw new AppError(httpStatus.CONFLICT, "A booking with a gateway transaction cannot be removed from its audit history.");
   }
 
   const result = await prisma.booking.delete({
@@ -448,15 +541,42 @@ const payExistPayments = async (bookingId: string, user: IRequestUser) => {
     );
   }
 
-  // Find pending security deposit payment
-  const payment = await prisma.payment.findFirst({
+  // Reuse an unstarted payment record; preserve failed/cancelled attempts for audit.
+  const payments = await prisma.payment.findMany({
     where: {
       bookingId: findBooking.id,
       userId: user.userId,
       paymentType: PaymentType.SECURITY_DEPOSIT,
-      paymentStatus: PaymentStatus.PENDING,
     },
+    orderBy: { createdAt: "desc" },
   });
+
+  const activePayment = payments.find(
+    (item) => item.paymentStatus === PaymentStatus.PENDING && item.bkashPaymentID,
+  );
+  if (activePayment) {
+    throw new AppError(httpStatus.CONFLICT, "A bKash checkout is already active for this deposit.");
+  }
+
+  let payment = payments.find(
+    (item) => item.paymentStatus === PaymentStatus.PENDING && !item.bkashPaymentID,
+  );
+
+  if (!payment) {
+    payment = await prisma.payment.create({
+      data: {
+        bookingId: findBooking.id,
+        userId: user.userId,
+        amount: findBooking.securityDeposit,
+        currency: "BDT",
+        paymentMethod: PaymentMethod.BKASH,
+        paymentStatus: PaymentStatus.PENDING,
+        paymentType: PaymentType.SECURITY_DEPOSIT,
+        merchantInvoiceNumber: `SECURITY-${findBooking.id}-${Date.now()}`,
+        payerReference: isExistUser.email,
+      },
+    });
+  }
 
   if (!payment) {
     throw new AppError(
@@ -559,6 +679,20 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
       throw new AppError(httpStatus.BAD_REQUEST, "Payment status not found");
     }
 
+    const payment = await tx.payment.findUnique({
+      where: { bkashPaymentID: paymentId },
+    });
+    if (!payment) {
+      throw new AppError(httpStatus.NOT_FOUND, "Payment record not found");
+    }
+    if (payment.paymentStatus === PaymentStatus.PAID) {
+      return { redirectURL: `${config.frontend_url}/dashboard/my-bookings?status=success` };
+    }
+    if (payment.paymentStatus !== PaymentStatus.PENDING) {
+      const terminalStatus = payment.paymentStatus === PaymentStatus.CANCELLED ? "cancel" : "failure";
+      return { redirectURL: `${config.frontend_url}/dashboard/my-bookings?status=${terminalStatus}` };
+    }
+
     // Get bKash ID Token
     const bkashIdToken = await getBkashIdToken();
 
@@ -588,17 +722,6 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
 
     const result = await paymentExecutedResponse.json();
 
-    // Find payment
-    const payment = await tx.payment.findUnique({
-      where: {
-        bkashPaymentID: paymentId,
-      },
-    });
-
-    if (!payment) {
-      throw new AppError(httpStatus.NOT_FOUND, "Payment record not found");
-    }
-
     // =========================
     // SUCCESS
     // =========================
@@ -607,10 +730,8 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
       result?.transactionStatus === "Completed"
     ) {
       // Update payment
-      await tx.payment.update({
-        where: {
-          bkashPaymentID: paymentId,
-        },
+      const paymentUpdate = await tx.payment.updateMany({
+        where: { id: payment.id, paymentStatus: PaymentStatus.PENDING },
         data: {
           paymentStatus: PaymentStatus.PAID,
           bkashTrxID: result?.trxID,
@@ -618,18 +739,20 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
           gatewayResponse: result,
         },
       });
-
-
+      if (paymentUpdate.count !== 1) {
+        return { redirectURL: `${config.frontend_url}/dashboard/my-bookings?status=success` };
+      }
 
       // Update booking
-      await tx.booking.update({
-        where: {
-          id: payment.bookingId!,
-        },
+      const bookingUpdate = await tx.booking.updateMany({
+        where: { id: payment.bookingId!, status: BookingStatus.PENDING },
         data: {
           status: BookingStatus.CONFIRMED,
         },
       });
+      if (bookingUpdate.count !== 1) {
+        throw new AppError(httpStatus.CONFLICT, "The booking is no longer pending; contact support to reconcile the payment.");
+      }
 
       const booking = await tx.booking.findUnique({
         where: {
@@ -645,17 +768,20 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
         throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
       }
 
-      // 4. Room → current roommates + occupant count
-      // 5. Room → BOOKED
+      await tx.$queryRaw`SELECT id FROM rooms WHERE id = ${booking.roomId} FOR UPDATE`;
+      const lockedRoom = await tx.rooms.findUnique({ where: { id: booking.roomId } });
+      if (!lockedRoom || lockedRoom.currentRoommates + booking.occupantCount > lockedRoom.maxRoommates) {
+        throw new AppError(httpStatus.CONFLICT, "Room capacity changed; contact support to reconcile the payment.");
+      }
+      const nextRoommates = lockedRoom.currentRoommates + booking.occupantCount;
+
       await tx.rooms.update({
         where: {
           id: booking.roomId,
         },
         data: {
-          currentRoommates: {
-            increment: booking.occupantCount,
-          },
-          roomStatus: RoomStatus.BOOKED,
+          currentRoommates: nextRoommates,
+          roomStatus: nextRoommates >= lockedRoom.maxRoommates ? RoomStatus.BOOKED : RoomStatus.AVAILABLE,
         },
       });
 
@@ -721,7 +847,7 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
 
 
 
-const refundBooking = async (bookingId: string) => {
+const refundBooking = async (bookingId: string, user: IRequestUser) => {
   const result = await prisma.$transaction(async (tx) => {
 
     if (!bookingId) {
@@ -743,6 +869,14 @@ const refundBooking = async (bookingId: string) => {
       throw new AppError(httpStatus.NOT_FOUND, "Booking not found");
     }
 
+    const actor = await tx.users.findUnique({ where: { id: user.userId } });
+    if (!actor || actor.status !== UserStatus.ACTIVE || !actor.emailVerified) {
+      throw new AppError(httpStatus.FORBIDDEN, "An active verified account is required");
+    }
+    if (actor.role !== Role.ADMIN && booking.userId !== actor.id) {
+      throw new AppError(httpStatus.FORBIDDEN, "You are not authorized to refund this booking");
+    }
+
     // 2. Booking status check
     if (booking.status !== BookingStatus.CONFIRMED) {
       throw new AppError(
@@ -756,9 +890,11 @@ const refundBooking = async (bookingId: string) => {
       throw new AppError(httpStatus.NOT_FOUND, "Payment record not found");
     }
 
-    const payments = await prisma.payment.findFirst({
+    const payments = await tx.payment.findFirst({
       where: {
         bookingId: booking.id,
+        paymentType: PaymentType.SECURITY_DEPOSIT,
+        paymentStatus: PaymentStatus.PAID,
       },
     });
 
@@ -768,6 +904,9 @@ const refundBooking = async (bookingId: string) => {
     if (!payments.paidAt) {
       throw new AppError(httpStatus.NOT_FOUND, "Payment date not found");
     }
+    if (!payments.bkashPaymentID || !payments.bkashTrxID) {
+      throw new AppError(httpStatus.BAD_REQUEST, "The paid transaction cannot be refunded through bKash");
+    }
 
     // 4. Check 15 days refund policy
     const refundDeadline = new Date(payments.paidAt);
@@ -776,9 +915,7 @@ const refundBooking = async (bookingId: string) => {
     const currentDate = new Date();
 
     if (currentDate > refundDeadline) {
-      throw new Error(
-        "Refund period has expired. Refund is only available within 15 days of payment.",
-      );
+      throw new AppError(httpStatus.BAD_REQUEST, "Refund period has expired. Refund is only available within 15 days of payment.");
     }
 
     // 5. Get bKash token
@@ -862,7 +999,7 @@ const refundBooking = async (bookingId: string) => {
         throw new AppError(httpStatus.NOT_FOUND, "Room not found");
       }
 
-      const currentRoommates = Math.max(0, room.currentRoommates - 1);
+      const currentRoommates = Math.max(0, room.currentRoommates - booking.occupantCount);
 
       const updatedRoom = await tx.rooms.update({
         where: {
@@ -870,7 +1007,7 @@ const refundBooking = async (bookingId: string) => {
         },
         data: {
           currentRoommates,
-          roomStatus: RoomStatus.AVAILABLE,
+          roomStatus: currentRoommates >= room.maxRoommates ? RoomStatus.BOOKED : RoomStatus.AVAILABLE,
         },
       });
 
@@ -900,6 +1037,7 @@ export const BookingService = {
   refundBooking,
   getBooking,
   getSingleBooking,
+  rejectBooking,
   cancelBooking,
   deleteBooking,
 };

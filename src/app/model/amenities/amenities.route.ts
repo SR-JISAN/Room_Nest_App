@@ -15,4 +15,4 @@ router.post("/add-amenities",auth(Role.ADMIN),AmenitiesController.addAmenities)
 router.delete("/delete-amenities",auth(Role.ADMIN),AmenitiesController.deleteAmenities)
 
 
-export const AmenitiesRouter = router
+export const AmenitiesRouter:Router = router

@@ -9,4 +9,4 @@ const router= Router();
 router.get("/user", auth(Role.USER), DashboardController.getUserDashboard);
 
 
-export const UserDashboard = router;
+export const UserDashboard: Router = router;

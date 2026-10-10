@@ -18,7 +18,7 @@ const register = CatchAsync(async(req:Request,res:Response)=>{
     SendResponse(res, {
       success: true,
       statusCode: httpStatus.OK,
-      message: "Send email verification otp successfully",
+      message: "Sent email verification otp successfully to you email. Please verify it to complete your registration",
       data: "verify the email with otp",
     });
 });
@@ -154,19 +154,9 @@ const logout = CatchAsync(async (req: Request, res: Response) => {
    const user = req.user as IRequestUser
   const result = await AuthService.logout(user);
 
-res.clearCookie("accessToken", {
-  httpOnly: true,
-  secure: config.node_env === "production",
-  sameSite: config.node_env === "production" ? "none" : "lax",
-  path: "/",
-});
+res.clearCookie("accessToken");
 
-res.clearCookie("refreshToken", {
-  httpOnly: true,
-  secure: config.node_env === "production",
-  sameSite: config.node_env === "production" ? "none" : "lax",
-  path: "/",
-});
+res.clearCookie("refreshToken");
 
   SendResponse(res, {
     success: true,

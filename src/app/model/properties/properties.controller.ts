@@ -7,6 +7,7 @@ import type{ IRequestUser } from "../../middleware/check.auth";
 import AppError from "../../utils/appError";
 import { CreatePropertyZodSchema } from "./properties.zod";
 import type{ IGetProperties } from "./properties.interface";
+import { PropertyStatus } from "../../../generated/prisma/enums";
 
 
 const getAllProperties = CatchAsync(async (req: Request, res: Response) => {
@@ -34,6 +35,50 @@ const getSingleProperty = CatchAsync(async (req: Request, res: Response) => {
     message: "Property found Successfully",
     data: result,
   });
+});
+
+const getMyProperty = CatchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const propertyId = req.params.propertyId as string;
+  const result = await PropertiesService.getMyProperty(user.userId, propertyId);
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Property found successfully",
+    data: result,
+  });
+});
+
+const getMyProperties = CatchAsync(async (req: Request, res: Response) => {
+  const user = req.user as IRequestUser;
+  const page = Math.max(1, Number(req.query.page) || 1);
+  const limit = Math.min(50, Math.max(1, Number(req.query.limit) || 20));
+  const result = await PropertiesService.getMyProperties(user.userId, page, limit);
+  SendResponse(res, {
+    success: true,
+    statusCode: httpStatus.OK,
+    message: "Your properties retrieved successfully",
+    data: result,
+  });
+});
+
+const getAdminProperties = CatchAsync(async (req: Request, res: Response) => {
+  const pageValue = Number(req.query.page ?? 1);
+  const limitValue = Number(req.query.limit ?? 20);
+  const page = Number.isFinite(pageValue) ? Math.max(1, Math.floor(pageValue)) : 1;
+  const limit = Number.isFinite(limitValue) ? Math.min(50, Math.max(1, Math.floor(limitValue))) : 20;
+  const statusValue = req.query.status?.toString();
+  const statuses = Object.values(PropertyStatus) as string[];
+  if (statusValue && !statuses.includes(statusValue)) throw new AppError(httpStatus.BAD_REQUEST, "Invalid property status");
+  const result = await PropertiesService.getAdminProperties(page, limit, statusValue as PropertyStatus | undefined);
+  SendResponse(res, { success: true, statusCode: httpStatus.OK, message: "Properties retrieved successfully", data: result });
+});
+
+const updatePropertyStatus = CatchAsync(async (req: Request, res: Response) => {
+  const status = req.body?.status as PropertyStatus;
+  if (!Object.values(PropertyStatus).includes(status)) throw new AppError(httpStatus.BAD_REQUEST, "Invalid property status");
+  const result = await PropertiesService.updatePropertyStatus(req.params.propertyId as string, status);
+  SendResponse(res, { success: true, statusCode: httpStatus.OK, message: "Property status updated successfully", data: result });
 });
 const getSingleRoom = CatchAsync(async (req: Request, res: Response) => {
   const propertyId = req.params.propertyId as string;
@@ -251,6 +296,10 @@ export const PropertyController = {
   deleteProperty,
   deleteRoom,
   getAllProperties,
+  getMyProperties,
   getSingleProperty,
+  getMyProperty,
+  getAdminProperties,
+  updatePropertyStatus,
   getSingleRoom,
 };

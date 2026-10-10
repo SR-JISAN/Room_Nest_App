@@ -12,6 +12,10 @@ const router = Router();
 
 
 router.get("/all-properties",PropertyController.getAllProperties);
+router.get("/my-properties", auth(Role.ADMIN, Role.LANDLORD), PropertyController.getMyProperties);
+router.get("/my-properties/:propertyId", auth(Role.ADMIN, Role.LANDLORD), PropertyController.getMyProperty);
+router.get("/admin-properties", auth(Role.ADMIN), PropertyController.getAdminProperties);
+router.patch("/admin-properties/:propertyId/status", auth(Role.ADMIN), PropertyController.updatePropertyStatus);
 router.get("/:propertyId", PropertyController.getSingleProperty);
 router.get("/:propertyId/:roomId", PropertyController.getSingleRoom);
 
@@ -59,6 +63,7 @@ router.patch(
 );
 
 router.delete("/delete-property/:propertyId",auth(Role.ADMIN,Role.LANDLORD),PropertyController.deleteProperty)
+
 router.delete("/delete-room/:propertyId/:roomId",auth(Role.ADMIN,Role.LANDLORD),PropertyController.deleteRoom)
 
-export const PropertyRoute = router
+export const PropertyRoute: Router = router;

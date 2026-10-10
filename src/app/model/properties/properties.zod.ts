@@ -6,7 +6,7 @@ export const CreatePropertyZodSchema = z.object({
     .string()
     .trim()
     .min(3, "Property title must be at least 3 characters")
-    .max(100, "Property title cannot exceed 100 characters"),
+    .max(50, "Property title cannot exceed 50 characters"),
 
   description: z
     .string()

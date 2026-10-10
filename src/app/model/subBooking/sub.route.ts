@@ -51,4 +51,4 @@ router.patch(
 );
 
 
-export const SubBookingRoute = router;
+export const SubBookingRoute: Router = router;

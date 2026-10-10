@@ -19,4 +19,4 @@ router.delete(
 );
 
 
-export const ReviewRoute =router;
+export const ReviewRoute: Router = router;

@@ -15,6 +15,7 @@ router.post(
 
 
 router.get("/get-booking",auth(Role.LANDLORD, Role.ADMIN, Role.USER),BookingController.getRequest);
+router.patch("/reject-booking/:bookingId", auth(Role.LANDLORD, Role.ADMIN), BookingController.rejectBooking);
 
 router.get("/get-single-booking/:bookingId",auth(Role.LANDLORD, Role.ADMIN, Role.USER),BookingController.getSingleBooking);
 
@@ -42,4 +43,4 @@ router.post(
 
 
 
-export const BookingRoute = router;
+export const BookingRoute: Router = router;

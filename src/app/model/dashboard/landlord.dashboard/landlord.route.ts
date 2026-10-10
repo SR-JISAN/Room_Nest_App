@@ -1,10 +1,10 @@
-import express from "express";
+import express, { Router } from "express";
 import { auth } from "../../../middleware/check.auth";
 import { Role } from "../../../../generated/prisma/enums";
 import { DashboardController } from "./landlord.controller";
 
 
-const router = express.Router();
+const router = Router();
 
 
 
@@ -14,4 +14,4 @@ router.get(
   DashboardController.getLandlordDashboard,
 );
 
-export const LandlordDashboardRoutes = router;
+export const LandlordDashboardRoutes:Router = router;

@@ -7,8 +7,11 @@ import { upload } from "../../lib/multer";
 
 const router =Router();
 
+router.get("/admin-users", auth(Role.ADMIN), UserController.getAdminUsers);
+router.patch("/admin-users/:userId/status", auth(Role.ADMIN), UserController.updateAdminUserStatus);
+
 router.patch("/update-profile",auth(Role.ADMIN,Role.LANDLORD,Role.USER), UserController.updateProfile);
 router.patch("/update-profile-image",upload.single("profile_image"),auth(Role.ADMIN,Role.LANDLORD,Role.USER), UserController.updateProfileImage);
 
 
-export const UserRouter = router
+export const UserRouter: Router = router;

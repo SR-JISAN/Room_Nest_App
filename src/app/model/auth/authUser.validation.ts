@@ -24,7 +24,7 @@ export const RegistrationValidationZODSchema = z.object({
         return allowedEmailDomains.includes(domain!);
       },
       {
-        message: "Please use a supported email provider",
+        message: "Please use a valid email",
       }
     ),
 
@@ -57,7 +57,7 @@ export const VerifyEmailZodSchema = z.object({
       return allowedEmailDomains.includes(domain!);
     },
     {
-      message: "Please use a supported email provider",
+      message: "Please use a valid email",
     },
   ),
   otp: z
@@ -75,7 +75,7 @@ export const LoginValidationZodSchema = z.object({
       return allowedEmailDomains.includes(domain!);
     },
     {
-      message: "Please use a supported email provider",
+      message: "Please use a valid email",
     },
   ),
   password: z
@@ -118,7 +118,7 @@ export const ResetPasswordZodSchema = z.object({
       return allowedEmailDomains.includes(domain!);
     },
     {
-      message: "Please use a supported email provider",
+      message: "Please use a valid email",
     },
   ),
 })

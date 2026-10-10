@@ -3,7 +3,7 @@ import type{ IRequestUser } from "../../middleware/check.auth";
 import httpStatus from "http-status"
 import AppError from "../../utils/appError";
 import type{ PropertyType } from "../../../generated/prisma/enums";
-import {  Role } from "../../../generated/prisma/enums";
+import { PropertyStatus, Role } from "../../../generated/prisma/enums";
 import type{ IGetProperties, IProperty, IUpdateProperty, IUpdateRoom } from "./properties.interface";
 import type{ UploadApiResponse } from "cloudinary";
 import { cloudinary } from "../../lib/cloudinary";
@@ -289,6 +289,10 @@ import type{ PropertiesWhereInput } from "../../../generated/prisma/models";
        httpStatus.NOT_FOUND,
        "Room not found in this property",
      );
+   }
+
+   if (payload.maxRoommates !== undefined && payload.maxRoommates < isExistRoom.currentRoommates) {
+     throw new AppError(httpStatus.CONFLICT, "Maximum occupants cannot be lower than the current resident count.");
    }
 
    // Partial update
@@ -647,9 +651,11 @@ return results;
     }
 
 
-    const isExistProperty = await prisma.properties.findUnique({
+    const isExistProperty = await prisma.properties.findFirst({
         where:{
-            id:propertyId
+            id:propertyId,
+            isDeleted: false,
+            ...(isExistUser.role === Role.LANDLORD ? { usersId: isExistUser.id } : {}),
         }
     });
 
@@ -657,14 +663,11 @@ return results;
         throw new AppError(httpStatus.NOT_FOUND,"Property not found")
     };
 
-    if(isExistProperty.isDeleted){
-        throw new AppError(httpStatus.BAD_REQUEST, "Property already deleted");
-    };
-
-    const result = await prisma.properties.delete({
+    const result = await prisma.properties.update({
         where:{
             id:isExistProperty.id
-        }
+        },
+        data: { isDeleted: true, deletedAt: new Date() },
     });
 
     return result;
@@ -703,9 +706,11 @@ return results;
      );
    }
 
-   const isExistProperty = await prisma.properties.findUnique({
+   const isExistProperty = await prisma.properties.findFirst({
      where: {
        id: propertyId,
+       isDeleted: false,
+       ...(isExistUser.role === Role.LANDLORD ? { usersId: isExistUser.id } : {}),
      },
    });
 
@@ -713,12 +718,11 @@ return results;
      throw new AppError(httpStatus.NOT_FOUND, "Property not found");
    }
 
-   if (isExistProperty.isDeleted) {
-     throw new AppError(httpStatus.BAD_REQUEST, "Property already deleted");
-   };
-   const isExistRoom = await prisma.rooms.findUnique({
+   const isExistRoom = await prisma.rooms.findFirst({
      where: {
        id: roomId,
+       propertyId: isExistProperty.id,
+       isDeleted: false,
      },
    });
 
@@ -726,75 +730,103 @@ return results;
      throw new AppError(httpStatus.NOT_FOUND, "Room not found");
    }
 
-   if (isExistRoom.isDeleted) {
-     throw new AppError(httpStatus.BAD_REQUEST, "Room already deleted");
-   };
-
-   const result = await prisma.rooms.delete({
+   const result = await prisma.rooms.update({
      where: {
        id: isExistRoom.id,
      },
+     data: { isDeleted: true, deletedAt: new Date() },
    });
 
    return result;
  };
 
-const getAllProperties = async(query:IGetProperties)=>{
-    const limit = query.limit? Number(query.limit): 10;
-    const page = query.page ?Number(query.page):1;
-    const skip = (page-1)*limit;
-    const sortBy = query.sortBy ? query.sortBy : "createdAt";
-    const sortOrder = query.sortOrder? query.sortOrder : "desc";
-    const andConditions : PropertiesWhereInput[]=[];
 
-    //search terms
+const getAllProperties = async (query: IGetProperties) => {
+  const parsedLimit = Number(query.limit);
+  const parsedPage = Number(query.page);
 
-    if(query.searchTerm){
-        andConditions.push({
-          OR: [
-            {
-              title: {
-                contains: query.searchTerm,
-                mode: "insensitive",
-              },
-            },
-            {
-              address: {
-                contains: query.searchTerm,
-                mode: "insensitive",
-              },
-            },
-            {
-              area: {
-                contains: query.searchTerm,
-                mode: "insensitive",
-              },
-            },
-            {
-              city: {
-                contains: query.searchTerm,
-                mode: "insensitive",
-              },
-            },
-          ],
-        });
-    };
+  const limit =
+    Number.isFinite(parsedLimit) && parsedLimit > 0
+      ? Math.min(50, Math.floor(parsedLimit))
+      : 10;
 
-    if(query.title){
-        andConditions.push({
-            title:{
-                contains: query.title as string,
-                mode:"insensitive"
-            }
-        })
-    };
+  const page =
+    Number.isFinite(parsedPage) && parsedPage > 0 ? Math.floor(parsedPage) : 1;
 
+  const skip = (page - 1) * limit;
 
-    if (query.propertyAmenities) {
-      const amenities = query.propertyAmenities
-        .split(",")
-        .map((item) => item.trim());
+  const sortBy =
+    query.sortBy && ["createdAt", "title"].includes(query.sortBy)
+      ? query.sortBy
+      : "createdAt";
 
+  const sortOrder = query.sortOrder === "asc" ? "asc" : "desc";
+
+  const andConditions: PropertiesWhereInput[] = [
+    {
+      isDeleted: false,
+    },
+  ];
+
+  // Search by title, address, area, or city
+  if (query.searchTerm?.trim()) {
+    const searchTerm = query.searchTerm.trim();
+
+    andConditions.push({
+      OR: [
+        {
+          title: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          address: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          area: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+        {
+          city: {
+            contains: searchTerm,
+            mode: "insensitive",
+          },
+        },
+      ],
+    });
+  }
+
+  // Filter by title
+  if (query.title?.trim()) {
+    andConditions.push({
+      title: {
+        contains: query.title.trim(),
+        mode: "insensitive",
+      },
+    });
+  }
+
+  // Filter by property type
+  if (query.propertyType) {
+    andConditions.push({
+      propertyType: query.propertyType as PropertyType,
+    });
+  }
+
+  // Filter by amenities
+  if (query.propertyAmenities?.trim()) {
+    const amenities = query.propertyAmenities
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    if (amenities.length > 0) {
       andConditions.push({
         propertyAmenities: {
           some: {
@@ -806,59 +838,68 @@ const getAllProperties = async(query:IGetProperties)=>{
           },
         },
       });
-    };
-
-    if(query.propertyType){
-        andConditions.push({
-            propertyType: query.propertyType as PropertyType
-        })
     }
+  }
 
-   andConditions.push({isDeleted:false})
+  const where: PropertiesWhereInput = {
+    AND: andConditions,
+  };
 
-    const result = await prisma.properties.findMany({
-        where:{
-            AND:andConditions.length >0? andConditions:undefined
+  const [result, totalCount] = await Promise.all([
+    prisma.properties.findMany({
+      where,
+      take: limit,
+      skip,
+      orderBy: {
+        [sortBy]: sortOrder,
+      },
+      include: {
+        rooms: {
+          where: {
+            isDeleted: false,
+          },
         },
+        propertyImages: {
+          where: {
+            isDeleted: false,
+          },
+        },
+        propertyAmenities: {
+          include: {
+            amenity: true,
+          },
+        },
+      },
+    }),
 
-        take:limit,
-        skip:skip,
-        orderBy:{[sortBy]:sortOrder},
+    prisma.properties.count({
+      where,
+    }),
+  ]);
 
-        include:{
-            rooms:true,
-            propertyImages:true,
-            propertyAmenities:true
-        }
-    })
-
-    const totalCount = await prisma.properties.count({
-        where:{
-            AND:andConditions
-        }
-    })
-
-    return {
-        result,
-        Meta:
-        {
-            page:page,
-            limit:limit, 
-            total:totalCount,
-            totalPages: Math.ceil(totalCount/limit)
-        }
-      }
+  return {
+    result,
+    Meta: {
+      page,
+      limit,
+      total: totalCount,
+      totalPages: Math.ceil(totalCount / limit),
+    },
+  };
 };
+
+
 
 const getSingleProperty = async(propertyId:string)=>{
   const isExistProperty =await prisma.properties.findUnique({
     where:{id:propertyId},
     include:{
       propertyAmenities:true,
-      propertyImages:true,
+      propertyImages: { where: { isDeleted: false } },
       rooms:{
+        where: { isDeleted: false },
         include:{
-          roomImages:true,
+          roomImages: { where: { isDeleted: false } },
           roomAmenities:true
         }
       }
@@ -868,10 +909,77 @@ const getSingleProperty = async(propertyId:string)=>{
     throw new AppError(httpStatus.NOT_FOUND,"Property not found.")
   };
   if(isExistProperty.isDeleted){
-    throw new AppError(httpStatus.BAD_REQUEST,"Property already Deleted")
+    throw new AppError(httpStatus.NOT_FOUND,"Property not found.")
   };
 
 return isExistProperty
+};
+
+const getMyProperty = async (userId: string, propertyId: string) => {
+  const property = await prisma.properties.findFirst({
+    where: { id: propertyId, usersId: userId, isDeleted: false },
+    include: {
+      propertyAmenities: true,
+      propertyImages: { where: { isDeleted: false } },
+      rooms: {
+        where: { isDeleted: false },
+        include: {
+          roomImages: { where: { isDeleted: false } },
+          roomAmenities: true,
+        },
+      },
+    },
+  });
+  if (!property) throw new AppError(httpStatus.NOT_FOUND, "Property not found.");
+  return property;
+};
+
+const getAdminProperties = async (page: number, limit: number, status?: PropertyStatus) => {
+  const where = { isDeleted: false, ...(status ? { propertyStatus: status } : {}) };
+  const [result, total] = await Promise.all([
+    prisma.properties.findMany({
+      where,
+      include: {
+        propertyImages: { where: { isDeleted: false } },
+        propertyAmenities: true,
+        users: { select: { id: true, name: true, email: true } },
+        rooms: { where: { isDeleted: false }, select: { id: true, title: true, roomStatus: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.properties.count({ where }),
+  ]);
+  return { result, Meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+};
+
+const updatePropertyStatus = async (propertyId: string, status: PropertyStatus) => {
+  const property = await prisma.properties.findFirst({ where: { id: propertyId, isDeleted: false } });
+  if (!property) throw new AppError(httpStatus.NOT_FOUND, "Property not found");
+  return prisma.properties.update({
+    where: { id: property.id },
+    data: { propertyStatus: status, verified: status === PropertyStatus.APPROVED },
+  });
+};
+
+const getMyProperties = async (userId: string, page = 1, limit = 20) => {
+  const where = { usersId: userId, isDeleted: false };
+  const [result, total] = await Promise.all([
+    prisma.properties.findMany({
+      where,
+      include: {
+        propertyImages: true,
+        propertyAmenities: true,
+        rooms: { where: { isDeleted: false }, include: { roomImages: true, roomAmenities: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.properties.count({ where }),
+  ]);
+  return { result, Meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 };
 
 const getSingleRoom = async (propertyId: string,roomId:string) => {
@@ -881,13 +989,15 @@ const getSingleRoom = async (propertyId: string,roomId:string) => {
   if (!isExistProperty) {
     throw new AppError(httpStatus.NOT_FOUND, "Property not found.");
   }
-  if (isExistProperty.isDeleted) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Property already Deleted");
+  if (isExistProperty.isDeleted || isExistProperty.propertyStatus !== "APPROVED") {
+    throw new AppError(httpStatus.NOT_FOUND, "Property not found.");
   }
 
-  const isRoomExist = await prisma.rooms.findUnique({
+  const isRoomExist = await prisma.rooms.findFirst({
     where: {
       id: roomId,
+      propertyId,
+      isDeleted: false,
     },
     include: {
       roomAmenities: true,
@@ -897,9 +1007,6 @@ const getSingleRoom = async (propertyId: string,roomId:string) => {
 
   if (!isRoomExist) {
     throw new AppError(httpStatus.NOT_FOUND, "Room not found.");
-  };
-  if (isRoomExist.isDeleted) {
-    throw new AppError(httpStatus.BAD_REQUEST, "Room already Deleted");
   };
   return isRoomExist;
 };
@@ -916,6 +1023,10 @@ const getSingleRoom = async (propertyId: string,roomId:string) => {
    deleteProperty,
    deleteRoom,
    getAllProperties,
+   getMyProperties,
    getSingleProperty,
+   getMyProperty,
+   getAdminProperties,
+   updatePropertyStatus,
    getSingleRoom,
  };
