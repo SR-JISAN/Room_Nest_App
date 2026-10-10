@@ -686,7 +686,7 @@ const bookingPaymentCallback = async (query: Record<string, any>) => {
       throw new AppError(httpStatus.NOT_FOUND, "Payment record not found");
     }
     if (payment.paymentStatus === PaymentStatus.PAID) {
-      return { redirectURL: `${config.frontend_url}/dashboard/my-bookings?status=success` };
+      return { redirectURL: `${config.frontend_url}/dashboard/my-bookings?status=payment-success` };
     }
     if (payment.paymentStatus !== PaymentStatus.PENDING) {
       const terminalStatus = payment.paymentStatus === PaymentStatus.CANCELLED ? "cancel" : "failure";
