@@ -1,4 +1,4 @@
-Room Nest --- Backend API                                                   | Live Link: https://room-nest-server.vercel.app
+Room Nest --- Backend API | Live Link: https://room-nest-server.vercel.app
 
 Room Nest is a backend server for a property rental and booking
 platform. It provides REST APIs for authentication, users, properties,
@@ -175,30 +175,30 @@ Project Structure
 
 room_nest_server/
 ├── prisma/
-│   └── schema/
-│       └── schema.prisma
+│ └── schema/
+│ └── schema.prisma
 │
 ├── src/
-│   ├── app/
-│   │   ├── config/
-│   │   ├── errors/
-│   │   ├── lib/
-│   │   ├── middleware/
-│   │   └── modules/
-│   │       ├── amenities/
-│   │       ├── auth/
-│   │       ├── booking/
-│   │       ├── dashboard/
-│   │       ├── payments/
-│   │       ├── properties/
-│   │       ├── reviews/
-│   │       ├── subBooking/
-│   │       └── users/
-│   │
-│   ├── template/
-│   │   └── email templates
-│   │
-│   └── server.ts
+│ ├── app/
+│ │ ├── config/
+│ │ ├── errors/
+│ │ ├── lib/
+│ │ ├── middleware/
+│ │ └── modules/
+│ │ ├── amenities/
+│ │ ├── auth/
+│ │ ├── booking/
+│ │ ├── dashboard/
+│ │ ├── payments/
+│ │ ├── properties/
+│ │ ├── reviews/
+│ │ ├── subBooking/
+│ │ └── users/
+│ │
+│ ├── template/
+│ │ └── email templates
+│ │
+│ └── server.ts
 │
 ├── .env
 ├── package.json
@@ -237,10 +237,7 @@ Create a .env file in the project root.
 
 Example:
 
-
-
-
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=https://roomnest-ruddy.vercel.app
 BACKEND_URL=[http://localhost:5000](https://room-nest-server.vercel.app/)
 
 JWT_ACCESS_SECRET=your_access_secret
@@ -348,19 +345,19 @@ module/
 Request Flow
 
 Client
-  ↓
+↓
 Route
-  ↓
+↓
 Middleware
-  ↓
+↓
 Validation
-  ↓
+↓
 Controller
-  ↓
+↓
 Service
-  ↓
+↓
 Prisma
-  ↓
+↓
 PostgreSQL
 
 Authentication and authorization are handled through middleware before
@@ -375,7 +372,7 @@ Example:
 const result = schema.safeParse(req.body);
 
 if (!result.success) {
-  // handle validation error
+// handle validation error
 }
 
 Validated data should be passed to the service layer rather than
@@ -388,13 +385,13 @@ The API uses JWT-based authentication.
 Typical flow:
 
 Login
-  ↓
+↓
 Validate credentials
-  ↓
+↓
 Generate access token
-  ↓
+↓
 Generate refresh token
-  ↓
+↓
 Set authentication cookies
 
 Protected requests use the authenticated user information to determine
@@ -420,8 +417,8 @@ can throw application-specific errors.
 Example:
 
 throw new AppError(
-  httpStatus.NOT_FOUND,
-  "User Not Found"
+httpStatus.NOT_FOUND,
+"User Not Found"
 );
 
 The global error handler then converts errors into a consistent API
@@ -447,18 +444,18 @@ Uploaded files should be validated before processing
 
 Useful Commands
 
-Command                     Purpose
+Command Purpose
 
-pnpm install              Install dependencies
-pnpm dev                  Start development server
-pnpm build                Build production bundle
-pnpm start                Start production server
-pnpm prisma generate      Generate Prisma client
-pnpm prisma migrate dev   Run development migration
-pnpm format:check         Check formatting
-pnpm format:fix           Fix formatting
-pnpm lint:check           Check lint
-pnpm lint:fix             Fix lint issues
+pnpm install Install dependencies
+pnpm dev Start development server
+pnpm build Build production bundle
+pnpm start Start production server
+pnpm prisma generate Generate Prisma client
+pnpm prisma migrate dev Run development migration
+pnpm format:check Check formatting
+pnpm format:fix Fix formatting
+pnpm lint:check Check lint
+pnpm lint:fix Fix lint issues
 
 API Documentation
 

@@ -19,14 +19,25 @@ import { UserDashboard } from "./app/model/dashboard/user.dashboard/user.route";
 import config from "./app/config";
 
 
-
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://roomnest-ruddy.vercel.app",
+];
 
 const app: Application = express();
 
 app.use(
   cors({
-    origin: config.frontend_url,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked for origin: ${origin}`));
+      }
+    },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
