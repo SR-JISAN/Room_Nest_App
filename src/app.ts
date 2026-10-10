@@ -25,7 +25,12 @@ const app: Application = express();
 
 app.use(
   cors({
-    origin: [config.frontend_url, config.app_url_local],
+    origin: [
+      config.frontend_url,
+      config.app_url_local,
+      config.bkash_base_url,
+      config.bkash_callback_url,
+    ],
     credentials: true,
   }),
 );
