@@ -10,7 +10,8 @@ dotenv.config({
 export default {
   node_env: process.env.NODE_ENV,
   port: process.env.PORT,
-  frontend_url: process.env.FRONTEND_URL,
+  frontend_url: process.env.FRONTEND_URL!,
+  app_url_local: process.env.APP_URL_LOCAL!,
   backend_url: process.env.APP_URL,
   bcrypt_salt_rounds: process.env.BCRYPT_SALT_ROUNDS,
   jwt_access_secret: process.env.JWT_ACCESS_SECRET!,
